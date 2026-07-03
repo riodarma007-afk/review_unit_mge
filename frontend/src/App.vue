@@ -37,7 +37,8 @@ const lastUpdatedText = computed(() => {
   <nav class="top-nav">
     <div class="top-nav-inner">
       <div class="nav-logo" style="display: flex; align-items: center; gap: 1rem;">
-      <img :src="`${assetBase}optrack_png.png`" alt="OpTrack Logo" style="height: 32px; width: auto;" />
+     <img :src="`${assetBase}optrack_png.png`" alt="OpTrack Logo" style="height: 32px; width: auto;" />
+     </div>
       
       <!-- Filter Toggle Button -->
       <button @click="filterStore.showFilters = !filterStore.showFilters" style="border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; font-size: 0.9rem; background: #eff6ff; border: 1.5px solid #3b82f6; color: #1d4ed8; height: fit-content; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(59,130,246,0.15);">
@@ -50,6 +51,7 @@ const lastUpdatedText = computed(() => {
         Filter
         <span v-if="filterStore.activeFilterCount > 0" style="background: #5c6ac4; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; margin-left: 0.1rem;">{{ filterStore.activeFilterCount }}</span>
       </button>
+      
     </div>
     
     <div class="nav-tabs" style="display: none;">
@@ -71,9 +73,16 @@ const lastUpdatedText = computed(() => {
         <span class="live-dot"></span>
         <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500; white-space: nowrap;">Updated {{ lastUpdatedText }}</span>
       </div>
-      <div style="height: 16px; display: flex; align-items: center; margin-left: 12px;">
+<<<<<<< HEAD
+      <div style="height: 16px; display: flex; align-items: center; margin-left: 12px; margin-right: 12px;">
         <img src="/planning_dept_logo.png" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
+=======
+      <div style="height: 16px; display: flex; align-items: center; margin-left: 12px;">
+        <img :src="`${assetBase}planning_dept_logo.png`" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
+>>>>>>> setup-deployment
       </div>
+
+    </div>
     </div>
   </nav>
   
