@@ -73,16 +73,10 @@ const lastUpdatedText = computed(() => {
         <span class="live-dot"></span>
         <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500; white-space: nowrap;">Updated {{ lastUpdatedText }}</span>
       </div>
-<<<<<<< HEAD
       <div style="height: 16px; display: flex; align-items: center; margin-left: 12px; margin-right: 12px;">
-        <img src="/planning_dept_logo.png" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
-=======
-      <div style="height: 16px; display: flex; align-items: center; margin-left: 12px;">
         <img :src="`${assetBase}planning_dept_logo.png`" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
->>>>>>> setup-deployment
       </div>
 
-    </div>
     </div>
   </nav>
   
