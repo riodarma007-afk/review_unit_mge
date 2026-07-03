@@ -294,17 +294,17 @@ const getBadgeColor = (unitCode) => {
 
 .slide-left-enter-from {
   opacity: 0;
-  transform: scale(1.3) translateX(100px); /* Masuk dari kanan */
+  transform: scale(1.4) translateX(100px); /* Masuk dari kanan */
 }
 
 .slide-left-leave-to {
   opacity: 0;
-  transform: scale(1.3) translateX(-100px); /* Keluar ke kiri */
+  transform: scale(1.4) translateX(-100px); /* Keluar ke kiri */
 }
 
 .slide-left-enter-to,
 .slide-left-leave-from {
   opacity: 1;
-  transform: scale(1.3) translateX(0);
+  transform: scale(1.4) translateX(0);
 }
 </style>
