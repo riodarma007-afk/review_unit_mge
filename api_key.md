@@ -1,3 +1,0 @@
-
-
-API_KEY: mge_fuel_3m9gzdIRGQf2AFtq7PeYSBNxiZLJrcky6nXuKhDWoHMEwlj4

@@ -1,1 +1,0 @@
-https://planning.mge.co.id/api/portal/coal/hauling?page=1&limit=500&date_from=&date_to=&shift=&pit=&vendor=&unit_type=&destination=&search=
