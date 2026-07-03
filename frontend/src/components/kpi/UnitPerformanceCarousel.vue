@@ -239,10 +239,10 @@ const getBadgeColor = (unitCode) => {
 .truck-img {
   grid-area: 1 / 1;
   width: 100%;
-  max-width: 450px;
+  max-width: 580px;
   height: auto;
   object-fit: contain;
-  transform: scale(1.3);
+  transform: scale(1.4);
   transform-origin: center center;
 }
 
