@@ -51,7 +51,7 @@ const lastUpdatedText = computed(() => {
       </button>
     </div>
     
-    <div class="nav-tabs">
+    <div class="nav-tabs" style="display: none;">
       <button class="nav-tab active">Overview</button>
       <button class="nav-tab">Units</button>
       <button class="nav-tab">Analytics</button>
