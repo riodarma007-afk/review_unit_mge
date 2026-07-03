@@ -11,20 +11,6 @@ const filterStore = useFilterStore();
 const summary = computed(() => kpiStore.summary || {});
 const trend = computed(() => kpiStore.trend || []);
 const unitPerfs = computed(() => kpiStore.unitPerformances || []);
-const activeDateText = computed(() => {
-  const p = summary.value?.period;
-  if (p && p.date_from && p.date_to) {
-    if (p.date_from === p.date_to) return p.date_from;
-    return `${p.date_from} to ${p.date_to}`;
-  }
-  const f = filterStore.filters;
-  if (f.date_from && f.date_to) {
-    if (f.date_from === f.date_to) return f.date_from;
-    return `${f.date_from} to ${f.date_to}`;
-  }
-  return 'All Time';
-});
-
 const fuelData = computed(() => kpiStore.fuelData);
 const isFuelLoading = computed(() => kpiStore.isFuelLoading);
 const haulingData = computed(() => kpiStore.haulingData);
@@ -257,13 +243,6 @@ const getBadgeColor = (code) => {
     </div>
     <div v-else-if="unitPerfs.length > 0" style="display: contents;">
       
-      <!-- Date Indicator -->
-      <div style="margin-bottom: 1.5rem; color: #64748b; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; background: #ffffff; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; width: fit-content; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#316bfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        <span style="font-weight: 500;">Menampilkan data untuk tanggal:</span>
-        <strong style="color: #0f172a;">{{ activeDateText }}</strong>
-      </div>
-
       <!-- Row 1: KPI Summary Cards -->
       <div class="grid-5 row">
         <!-- PA Card -->

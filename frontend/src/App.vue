@@ -1,9 +1,26 @@
 <script setup>
 import { computed } from 'vue';
 import { useKpiStore } from './stores/kpiStore';
+import { useFilterStore } from './stores/filterStore';
 import OverviewView from './views/OverviewView.vue';
 
 const kpiStore = useKpiStore();
+const filterStore = useFilterStore();
+
+const activeDateText = computed(() => {
+  const p = kpiStore.summary?.period;
+  if (p && p.date_from && p.date_to) {
+    if (p.date_from === p.date_to) return p.date_from;
+    return `${p.date_from} to ${p.date_to}`;
+  }
+  const f = filterStore.filters;
+  if (f.date_from && f.date_to) {
+    if (f.date_from === f.date_to) return f.date_from;
+    return `${f.date_from} to ${f.date_to}`;
+  }
+  return 'Semua Waktu';
+});
+
 const lastUpdatedText = computed(() => {
   if (!kpiStore.lastUpdated) return '--';
   const d = kpiStore.lastUpdated;
@@ -28,7 +45,13 @@ const lastUpdatedText = computed(() => {
       <button class="nav-tab">History</button>
     </div>
     
-    <div class="nav-icons">
+    <div class="nav-icons" style="display: flex; align-items: center; gap: 0.75rem;">
+      <!-- Active Date Indicator -->
+      <div style="color: #64748b; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; background: #f8fafc; padding: 4px 12px; border-radius: 20px; border: 1px solid #e2e8f0; font-weight: 500; height: fit-content;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#316bfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <span>Data Tanggal: {{ activeDateText }}</span>
+      </div>
+
       <!-- Live Indicator -->
       <div class="live-indicator" v-if="kpiStore.autoRefreshEnabled" title="Data is being refreshed automatically">
         <span class="live-dot"></span>
