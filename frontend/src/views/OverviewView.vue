@@ -195,7 +195,7 @@ const getBadgeColor = (code) => {
 
 <template>
   <div class="page-wrapper animate-in">
-    <div style="display: flex; align-items: center; margin-bottom: 0.75rem; gap: 0.5rem;">
+    <div style="display: flex; align-items: center; margin-bottom: 0.25rem; gap: 0.5rem;">
       <button class="btn btn-outline" @click="showFilters = !showFilters" style="border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; color: #475569; height: fit-content;">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
