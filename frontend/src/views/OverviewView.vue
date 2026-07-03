@@ -447,15 +447,9 @@ const getBadgeColor = (code) => {
           </div>
 
           <!-- Unit Event Bar Chart -->
-          <div style="display: flex; flex-direction: column; height: 100%; padding: 1.25rem; grid-column: span 1;">
-            <div class="card-title-row">
-              <span class="card-title">Unit Event</span>
-              <span style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-main); padding: 4px 10px; border-radius: 20px; position: relative; z-index: 10; margin-right: 110px;">
-                Total: <strong style="color: var(--text-primary);"><SmoothCounter :value="activeData.events_pareto?.total_delay_hours || 0" :decimals="1"/>h</strong>
-              </span>
-            </div>
+          <div style="display: flex; flex-direction: column; height: 100%; padding: 1.25rem 1.25rem 1.5rem; grid-column: span 1;">
             
-            <div v-if="activeData.events_pareto?.items?.length" class="event-pareto-list">
+            <div v-if="activeData.events_pareto?.items?.length" class="event-pareto-list" style="flex: 1; padding-top: 1rem;">
               <div v-for="(item, idx) in activeData.events_pareto.items.slice(0, 10)" :key="idx" class="event-bar-row">
                 <div class="event-bar-header">
                   <span class="event-name">{{ item.status }}</span>
@@ -466,8 +460,15 @@ const getBadgeColor = (code) => {
                 </div>
               </div>
             </div>
-            <div v-else style="text-align: center; color: var(--text-muted); padding: 2rem 0; font-size: 0.85rem; margin: auto;">
+            <div v-else style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem;">
               No delay/breakdown events for this unit.
+            </div>
+
+            <!-- Total Badge placed at the bottom -->
+            <div style="display: flex; justify-content: flex-end; margin-top: auto; padding-top: 1rem;">
+              <span style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-main); padding: 6px 14px; border-radius: 20px;">
+                Total: <strong style="color: var(--text-primary);"><SmoothCounter :value="activeData.events_pareto?.total_delay_hours || 0" :decimals="1"/>h</strong>
+              </span>
             </div>
           </div>
         </div>
