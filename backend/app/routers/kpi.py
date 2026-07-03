@@ -36,20 +36,27 @@ def get_kpi_summary(
     filters = _get_filters(date_from, date_to, shift, pit, unit_code, activity)
     repo = OptrackRepository()
     
-    df_utama = repo.get_data_utama_df(**filters)
-    df_events = repo.get_events_df(**filters)
+    data_utama = repo.get_data_utama(**filters)
+    events = repo.get_events(**filters)
     
-    kpi_result = KpiCalculator.summarize_kpi(df_utama, df_events)
+    kpi_result = KpiCalculator.summarize_kpi(data_utama, events)
     
     # Calculate period bounds if available
-    d_from = str(df_utama['Date'].min()) if not df_utama.empty else (str(date_from) if date_from else "")
-    d_to = str(df_utama['Date'].max()) if not df_utama.empty else (str(date_to) if date_to else "")
-    unit_count = df_utama['Unit_Code'].nunique() if not df_utama.empty else 0
+    if data_utama:
+        dates = [row.get('Date') for row in data_utama if row.get('Date') is not None]
+        d_from = str(min(dates)) if dates else (str(date_from) if date_from else "")
+        d_to = str(max(dates)) if dates else (str(date_to) if date_to else "")
+        unit_codes = set(row.get('Unit_Code') for row in data_utama if row.get('Unit_Code') is not None)
+        unit_count = len(unit_codes)
+    else:
+        d_from = str(date_from) if date_from else ""
+        d_to = str(date_to) if date_to else ""
+        unit_count = 0
     
     # Tambahkan total jam operasional
-    total_mohh = float(df_utama['MOHH'].sum()) if not df_utama.empty else 0
-    total_wh = float(df_utama['WH'].sum()) if not df_utama.empty else 0
-    total_downtime = float(df_utama['Downtime'].sum()) if not df_utama.empty else 0
+    total_mohh = sum(float(row.get('MOHH', 0) or 0) for row in data_utama) if data_utama else 0
+    total_wh = sum(float(row.get('WH', 0) or 0) for row in data_utama) if data_utama else 0
+    total_downtime = sum(float(row.get('Downtime', 0) or 0) for row in data_utama) if data_utama else 0
     
     return KpiSummaryResponse(
         period={"date_from": d_from, "date_to": d_to},
@@ -75,15 +82,13 @@ def get_kpi_trend(
     filters = _get_filters(date_from, date_to, shift, pit, unit_code, activity)
     repo = OptrackRepository()
     
-    df_utama = repo.get_data_utama_df(**filters)
-    df_events = repo.get_events_df(**filters)
+    data_utama = repo.get_data_utama(**filters)
+    events = repo.get_events(**filters)
     
-    # Map group_by ke kolom DataFrame
+    # Map group_by ke kolom
     gb_map = {"date": "Date", "shift": "Shift", "pit": "PIT"}
     col_group = gb_map.get(group_by.lower(), "Date")
     
-    df_trend = KpiCalculator.calculate_trend(df_utama, df_events, col_group)
-    
-    series = df_trend.to_dict('records') if not df_trend.empty else []
+    series = KpiCalculator.calculate_trend(data_utama, events, col_group)
     
     return KpiTrendResponse(group_by=group_by.lower(), series=series)

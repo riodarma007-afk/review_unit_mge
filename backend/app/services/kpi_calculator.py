@@ -1,8 +1,28 @@
-import pandas as pd
-import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, List
+from collections import defaultdict
 
 from app.core.kpi_targets import KPI_TARGETS, MECHANICAL_CODES
+
+
+def _safe_float(val, default=0.0):
+    """Safely convert a value to float."""
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_int(val, default=0):
+    """Safely convert a value to int."""
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return default
+
 
 class KpiCalculator:
     @staticmethod
@@ -48,99 +68,118 @@ class KpiCalculator:
         }
 
     @staticmethod
-    def summarize_kpi(df_utama: pd.DataFrame, df_events: pd.DataFrame) -> Dict[str, Any]:
+    def summarize_kpi(data_utama: List[Dict], events: List[Dict]) -> Dict[str, Any]:
         """Hitung KPI level grup (summary total)"""
-        if df_utama.empty:
+        if not data_utama:
             return KpiCalculator.calculate_kpi_from_aggs(0, 0, 0, 0, 0)
             
-        sum_mohh = df_utama['MOHH'].sum() if 'MOHH' in df_utama else 0
-        sum_downtime = df_utama['Downtime'].sum() if 'Downtime' in df_utama else 0
-        sum_wh = df_utama['WH'].sum() if 'WH' in df_utama else 0
-        sum_ritasi = df_utama['Ritasi'].sum() if 'Ritasi' in df_utama else 0
+        sum_mohh = sum(_safe_float(row.get('MOHH')) for row in data_utama)
+        sum_downtime = sum(_safe_float(row.get('Downtime')) for row in data_utama)
+        sum_wh = sum(_safe_float(row.get('WH')) for row in data_utama)
+        sum_ritasi = sum(_safe_float(row.get('Ritasi')) for row in data_utama)
         
         sum_mech_downtime = 0
-        if not df_events.empty and 'Status' in df_events and 'Durasi' in df_events:
-            mech_events = df_events[df_events['Status'].isin(MECHANICAL_CODES)]
-            sum_mech_downtime = mech_events['Durasi'].sum()
+        if events:
+            for event in events:
+                status = str(event.get('Status', ''))
+                durasi = _safe_float(event.get('Durasi'))
+                if status in MECHANICAL_CODES:
+                    sum_mech_downtime += durasi
             
         return KpiCalculator.calculate_kpi_from_aggs(
             sum_mohh, sum_downtime, sum_mech_downtime, sum_wh, sum_ritasi
         )
 
     @staticmethod
-    def calculate_trend(df_utama: pd.DataFrame, df_events: pd.DataFrame, group_by: str) -> pd.DataFrame:
+    def calculate_trend(data_utama: List[Dict], events: List[Dict], group_by: str) -> List[Dict]:
         """
         Hitung trend KPI dengan group_by (Date, Shift, atau PIT).
+        Returns list of dicts instead of DataFrame.
         """
-        if df_utama.empty:
-            return pd.DataFrame()
+        if not data_utama:
+            return []
             
         if group_by not in ['Date', 'Shift', 'PIT']:
-            group_by = 'Date' # default
+            group_by = 'Date'  # default
             
-        # Agregasi data utama
-        agg_funcs = {
-            'MOHH': 'sum',
-            'Downtime': 'sum',
-            'WH': 'sum',
-            'Ritasi': 'sum'
-        }
-        df_grouped = df_utama.groupby(group_by, as_index=False).agg(agg_funcs)
+        # Agregasi data utama per group
+        grouped = defaultdict(lambda: {'MOHH': 0, 'Downtime': 0, 'WH': 0, 'Ritasi': 0})
+        for row in data_utama:
+            key = str(row.get(group_by, ''))
+            grouped[key]['MOHH'] += _safe_float(row.get('MOHH'))
+            grouped[key]['Downtime'] += _safe_float(row.get('Downtime'))
+            grouped[key]['WH'] += _safe_float(row.get('WH'))
+            grouped[key]['Ritasi'] += _safe_float(row.get('Ritasi'))
+        
+        # Buat lookup: ID_data -> group_by value
+        id_to_group = {}
+        for row in data_utama:
+            id_data = row.get('ID_data')
+            if id_data is not None:
+                id_to_group[id_data] = str(row.get(group_by, ''))
         
         # Agregasi mech downtime dari event
-        mech_downtime_map = {}
-        if not df_events.empty:
-            mech_events = df_events[df_events['Status'].isin(MECHANICAL_CODES)]
-            if not mech_events.empty:
-                # Merge events dengan data_utama untuk mendapatkan field group_by (seperti Date, Shift, PIT)
-                # karena event hanya punya ID_data_Input
-                if group_by in mech_events.columns: # jika sudah di-join
-                    mech_grouped = mech_events.groupby(group_by, as_index=False)['Durasi'].sum()
-                    mech_downtime_map = dict(zip(mech_grouped[group_by], mech_grouped['Durasi']))
-                else:
-                    # Kita harus gabungkan dengan data utama
-                    merged = pd.merge(mech_events, df_utama[['ID_data', group_by]], left_on='ID_data_Input', right_on='ID_data', how='inner')
-                    mech_grouped = merged.groupby(group_by, as_index=False)['Durasi'].sum()
-                    mech_downtime_map = dict(zip(mech_grouped[group_by], mech_grouped['Durasi']))
+        mech_downtime_map = defaultdict(float)
+        if events:
+            for event in events:
+                status = str(event.get('Status', ''))
+                if status in MECHANICAL_CODES:
+                    durasi = _safe_float(event.get('Durasi'))
+                    id_input = event.get('ID_data_Input')
+                    group_key = id_to_group.get(id_input)
+                    if group_key is not None:
+                        mech_downtime_map[group_key] += durasi
         
         results = []
-        for _, row in df_grouped.iterrows():
-            key = row[group_by]
+        for key, agg in grouped.items():
             mech_dt = mech_downtime_map.get(key, 0)
             kpi = KpiCalculator.calculate_kpi_from_aggs(
-                row['MOHH'], row['Downtime'], mech_dt, row['WH'], row['Ritasi']
+                agg['MOHH'], agg['Downtime'], mech_dt, agg['WH'], agg['Ritasi']
             )
-            # Konversi key ke string jika date
-            key_str = str(key)
-            kpi['label'] = key_str
+            kpi['label'] = key
             results.append(kpi)
             
-        return pd.DataFrame(results)
+        return results
 
     @staticmethod
-    def calculate_unit_ranking(df_utama: pd.DataFrame, df_events: pd.DataFrame, metric: str = 'productivity') -> pd.DataFrame:
-        """Hitung ranking unit berdasarkan metrik tertentu"""
-        if df_utama.empty:
-            return pd.DataFrame(columns=['unit_code', 'value'])
+    def calculate_unit_ranking(data_utama: List[Dict], events: List[Dict], metric: str = 'productivity') -> List[Dict]:
+        """Hitung ranking unit berdasarkan metrik tertentu. Returns list of dicts."""
+        if not data_utama:
+            return []
             
-        df_grouped = df_utama.groupby('Unit_Code', as_index=False).agg({
-            'MOHH': 'sum', 'Downtime': 'sum', 'WH': 'sum', 'Ritasi': 'sum'
-        })
+        # Group by Unit_Code
+        grouped = defaultdict(lambda: {'MOHH': 0, 'Downtime': 0, 'WH': 0, 'Ritasi': 0})
+        for row in data_utama:
+            unit = row.get('Unit_Code', '')
+            grouped[unit]['MOHH'] += _safe_float(row.get('MOHH'))
+            grouped[unit]['Downtime'] += _safe_float(row.get('Downtime'))
+            grouped[unit]['WH'] += _safe_float(row.get('WH'))
+            grouped[unit]['Ritasi'] += _safe_float(row.get('Ritasi'))
         
-        mech_downtime_map = {}
-        if not df_events.empty:
-            mech_events = df_events[df_events['Status'].isin(MECHANICAL_CODES)]
-            if not mech_events.empty:
-                merged = pd.merge(mech_events, df_utama[['ID_data', 'Unit_Code']], left_on='ID_data_Input', right_on='ID_data', how='inner')
-                mech_grouped = merged.groupby('Unit_Code', as_index=False)['Durasi'].sum()
-                mech_downtime_map = dict(zip(mech_grouped['Unit_Code'], mech_grouped['Durasi']))
+        # Buat lookup: ID_data -> Unit_Code
+        id_to_unit = {}
+        for row in data_utama:
+            id_data = row.get('ID_data')
+            if id_data is not None:
+                id_to_unit[id_data] = row.get('Unit_Code', '')
+        
+        # Mech downtime per unit
+        mech_downtime_map = defaultdict(float)
+        if events:
+            for event in events:
+                status = str(event.get('Status', ''))
+                if status in MECHANICAL_CODES:
+                    durasi = _safe_float(event.get('Durasi'))
+                    id_input = event.get('ID_data_Input')
+                    unit = id_to_unit.get(id_input)
+                    if unit is not None:
+                        mech_downtime_map[unit] += durasi
                 
         results = []
-        for _, row in df_grouped.iterrows():
-            unit = row['Unit_Code']
+        for unit, agg in grouped.items():
             mech_dt = mech_downtime_map.get(unit, 0)
             kpi = KpiCalculator.calculate_kpi_from_aggs(
-                row['MOHH'], row['Downtime'], mech_dt, row['WH'], row['Ritasi']
+                agg['MOHH'], agg['Downtime'], mech_dt, agg['WH'], agg['Ritasi']
             )
             
             value = None
@@ -157,120 +196,136 @@ class KpiCalculator:
             elif metric == 'eu_percent':
                 value = kpi['eu_percent']
                 
-            results.append({'unit_code': unit, 'value': value})
+            if value is not None:
+                results.append({'unit_code': unit, 'value': value})
             
-        df_res = pd.DataFrame(results)
-        # Drop unit yang valuenya None sebelum di-sort
-        df_res = df_res.dropna(subset=['value'])
-        return df_res
+        return results
 
     @staticmethod
-    def calculate_all_units_kpi(df_utama: pd.DataFrame, df_events: pd.DataFrame) -> list:
+    def calculate_all_units_kpi(data_utama: List[Dict], events: List[Dict]) -> list:
         """Hitung KPI lengkap untuk semua unit, mengembalikan list of dict"""
-        if df_utama.empty:
+        if not data_utama:
             return []
-            
-        df_grouped = df_utama.groupby('Unit_Code', as_index=False).agg({
-            'MOHH': 'sum', 'Downtime': 'sum', 'WH': 'sum', 'Ritasi': 'sum', 'Date': 'nunique',
-            'Delay': 'sum', 'Idle': 'sum'
-        })
         
-        mech_downtime_map = {}
-        breakdown_count_map = {}
-        events_pareto_map = {}
+        # Group data utama by Unit_Code
+        grouped = defaultdict(lambda: {
+            'MOHH': 0, 'Downtime': 0, 'WH': 0, 'Ritasi': 0,
+            'Delay': 0, 'Idle': 0, 'dates': set()
+        })
+        for row in data_utama:
+            unit = row.get('Unit_Code', '')
+            grouped[unit]['MOHH'] += _safe_float(row.get('MOHH'))
+            grouped[unit]['Downtime'] += _safe_float(row.get('Downtime'))
+            grouped[unit]['WH'] += _safe_float(row.get('WH'))
+            grouped[unit]['Ritasi'] += _safe_float(row.get('Ritasi'))
+            grouped[unit]['Delay'] += _safe_float(row.get('Delay'))
+            grouped[unit]['Idle'] += _safe_float(row.get('Idle'))
+            date_val = row.get('Date')
+            if date_val is not None:
+                grouped[unit]['dates'].add(str(date_val))
+        
+        # Buat lookup: ID_data -> Unit_Code
+        id_to_unit = {}
+        for row in data_utama:
+            id_data = row.get('ID_data')
+            if id_data is not None:
+                id_to_unit[id_data] = row.get('Unit_Code', '')
+        
+        # Activity breakdown per unit
+        activity_agg = defaultdict(lambda: defaultdict(lambda: {'ritasi': 0, 'shifts': 0}))
+        for row in data_utama:
+            unit = row.get('Unit_Code', '')
+            activity = str(row.get('Activity', '')) if row.get('Activity') is not None else 'Unknown'
+            activity_agg[unit][activity]['ritasi'] += _safe_float(row.get('Ritasi'))
+            activity_agg[unit][activity]['shifts'] += 1
+        
+        activity_map = {}
+        for unit, activities in activity_agg.items():
+            act_list = []
+            for act_name, act_data in activities.items():
+                act_list.append({
+                    "activity": act_name,
+                    "ritasi": int(act_data['ritasi']),
+                    "shifts": act_data['shifts']
+                })
+            activity_map[unit] = act_list
+        
+        # Process events
+        mech_downtime_map = defaultdict(float)
+        breakdown_count_map = defaultdict(int)
+        events_pareto_map = defaultdict(lambda: defaultdict(float))
         category_idle_map = {}
         category_delay_map = {}
         category_downtime_map = {}
         
-        # Activity Breakdown
-        activity_grouped = df_utama.groupby(['Unit_Code', 'Activity'], as_index=False).agg(
-            Total_Ritasi=('Ritasi', 'sum'),
-            Total_Shifts=('Date', 'count')
-        )
-        activity_map = {}
-        for unit_val, group in activity_grouped.groupby('Unit_Code'):
-            act_list = []
-            for _, r in group.iterrows():
-                act_list.append({
-                    "activity": str(r['Activity']) if pd.notna(r['Activity']) else 'Unknown',
-                    "ritasi": int(r['Total_Ritasi']),
-                    "shifts": int(r['Total_Shifts'])
-                })
-            activity_map[unit_val] = act_list
-        
-        if not df_events.empty:
-            merged = pd.merge(df_events, df_utama[['ID_data', 'Unit_Code']], left_on='ID_data_Input', right_on='ID_data', how='inner')
-            
-            # Aggregate categories for Idle, Delay, Downtime from actual events
-            if 'Category' in merged.columns:
-                cat_grouped = merged.groupby(['Unit_Code', 'Category'], as_index=False)['Durasi'].sum()
-                for _, r in cat_grouped.iterrows():
-                    unit = r['Unit_Code']
-                    cat = str(r['Category']).strip().lower()
-                    val = r['Durasi']
-                    if cat == 'downtime':
-                        category_downtime_map[unit] = val
-                    elif cat == 'delay':
-                        category_delay_map[unit] = val
-                    elif cat == 'idle':
-                        category_idle_map[unit] = val
-            
-            # Parekan events per unit (exclude Other, No timesheet, Holiday)
-            merged_for_pareto = merged[merged['Durasi'] > 0].copy()
-            merged_for_pareto['status_clean'] = merged_for_pareto['Status'].astype(str).str.strip().str.lower()
-            exclude_statuses = ['other', 'others', 'no timesheet', 'holiday']
-            events_filtered = merged_for_pareto[~merged_for_pareto['status_clean'].isin(exclude_statuses)]
-            
-            events_grouped = events_filtered.groupby(['Unit_Code', 'Status'], as_index=False)['Durasi'].sum()
-            for unit, group in events_grouped.groupby('Unit_Code'):
-                sorted_events = group.sort_values(by='Durasi', ascending=False)
-                events_pareto_map[unit] = [
-                    {
-                        "status": row['Status'], 
-                        "code": 0, 
-                        "hours": round(row['Durasi'], 2)
-                    }
-                    for _, row in sorted_events.iterrows()
-                ]
-
-            mech_events = df_events[df_events['Status'].isin(MECHANICAL_CODES)]
-            if not mech_events.empty:
-                merged_mech = pd.merge(mech_events, df_utama[['ID_data', 'Unit_Code']], left_on='ID_data_Input', right_on='ID_data', how='inner')
-                mech_grouped = merged_mech.groupby('Unit_Code', as_index=False).agg(
-                    Durasi=('Durasi', 'sum'),
-                    EventCount=('ID_data_Input', 'count')
-                )
-                mech_downtime_map = dict(zip(mech_grouped['Unit_Code'], mech_grouped['Durasi']))
-                breakdown_count_map = dict(zip(mech_grouped['Unit_Code'], mech_grouped['EventCount']))
+        if events:
+            # Merge events with data_utama via id_to_unit lookup
+            for event in events:
+                id_input = event.get('ID_data_Input')
+                unit = id_to_unit.get(id_input)
+                if unit is None:
+                    continue
+                    
+                durasi = _safe_float(event.get('Durasi'))
+                status = str(event.get('Status', ''))
+                category = str(event.get('Category', '')).strip().lower()
                 
+                # Aggregate categories for Idle, Delay, Downtime
+                if category == 'downtime':
+                    category_downtime_map[unit] = category_downtime_map.get(unit, 0) + durasi
+                elif category == 'delay':
+                    category_delay_map[unit] = category_delay_map.get(unit, 0) + durasi
+                elif category == 'idle':
+                    category_idle_map[unit] = category_idle_map.get(unit, 0) + durasi
+                
+                # Events pareto (exclude irrelevant statuses)
+                if durasi > 0:
+                    status_clean = status.strip().lower()
+                    exclude_statuses = ['other', 'others', 'no timesheet', 'holiday']
+                    if status_clean not in exclude_statuses:
+                        events_pareto_map[unit][status] += durasi
+                
+                # Mech downtime
+                if status in MECHANICAL_CODES:
+                    mech_downtime_map[unit] += durasi
+                    breakdown_count_map[unit] += 1
+        
         results = []
-        for _, row in df_grouped.iterrows():
-            unit = row['Unit_Code']
+        for unit, agg in grouped.items():
             mech_dt = mech_downtime_map.get(unit, 0)
             # Override downtime with actual event sum if exists, else fallback to raw data
-            real_downtime = category_downtime_map.get(unit, row['Downtime'])
-            real_delay = category_delay_map.get(unit, row.get('Delay', 0))
-            real_idle = category_idle_map.get(unit, row.get('Idle', 0))
+            real_downtime = category_downtime_map.get(unit, agg['Downtime'])
+            real_delay = category_delay_map.get(unit, agg['Delay'])
+            real_idle = category_idle_map.get(unit, agg['Idle'])
             
             kpi = KpiCalculator.calculate_kpi_from_aggs(
-                row['MOHH'], real_downtime, mech_dt, row['WH'], row['Ritasi']
+                agg['MOHH'], real_downtime, mech_dt, agg['WH'], agg['Ritasi']
             )
             kpi['unit_code'] = unit
-            kpi['mohh'] = round(row['MOHH'], 2)
-            kpi['wh'] = round(row['WH'], 2)
+            kpi['mohh'] = round(agg['MOHH'], 2)
+            kpi['wh'] = round(agg['WH'], 2)
             kpi['downtime'] = round(real_downtime, 2)
             kpi['delay'] = round(real_delay, 2)
             kpi['idle'] = round(real_idle, 2)
             kpi['mech_downtime'] = round(mech_dt, 2)
             kpi['breakdown_count'] = int(breakdown_count_map.get(unit, 0))
             
-            days_count = row.get('Date', 1)
-            total_rit = row.get('Ritasi', 0)
+            days_count = len(agg['dates']) if agg['dates'] else 1
+            total_rit = agg['Ritasi']
             kpi['avg_ritasi_per_day'] = round(total_rit / days_count, 1) if days_count > 0 else 0
             
             kpi['activities'] = activity_map.get(unit, [])
             
-            unit_events = events_pareto_map.get(unit, [])
+            # Build events pareto for this unit
+            unit_events_raw = events_pareto_map.get(unit, {})
+            unit_events = []
+            for evt_status, evt_durasi in sorted(unit_events_raw.items(), key=lambda x: x[1], reverse=True):
+                unit_events.append({
+                    "status": evt_status,
+                    "code": 0,
+                    "hours": round(evt_durasi, 2)
+                })
+            
             total_delay = sum(e['hours'] for e in unit_events)
             kpi['events_pareto'] = {
                 "total_delay_hours": round(total_delay, 2),

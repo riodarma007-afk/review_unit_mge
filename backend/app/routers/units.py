@@ -37,15 +37,16 @@ def get_unit_ranking(
     filters = _get_filters(date_from, date_to, shift, pit, None, activity)
     repo = OptrackRepository()
     
-    df_utama = repo.get_data_utama_df(**filters)
-    df_events = repo.get_events_df(**filters)
+    data_utama = repo.get_data_utama(**filters)
+    events = repo.get_events(**filters)
     
-    df_rank = KpiCalculator.calculate_unit_ranking(df_utama, df_events, metric)
+    rank_data = KpiCalculator.calculate_unit_ranking(data_utama, events, metric)
     
-    if not df_rank.empty:
-        df_rank = df_rank.sort_values(by='value', ascending=(order == 'asc'))
-        df_rank = df_rank.head(limit)
-        data = df_rank.to_dict('records')
+    if rank_data:
+        # Sort by value
+        rank_data.sort(key=lambda x: x.get('value', 0) or 0, reverse=(order != 'asc'))
+        # Limit
+        data = rank_data[:limit]
     else:
         data = []
         
@@ -63,23 +64,23 @@ def get_unit_detail(
     filters = _get_filters(date_from, date_to, shift, pit, unit_code, None)
     repo = OptrackRepository()
     
-    df_utama = repo.get_data_utama_df(**filters)
-    df_events = repo.get_events_df(**filters)
+    data_utama = repo.get_data_utama(**filters)
+    events = repo.get_events(**filters)
     
-    if df_utama.empty:
+    if not data_utama:
         raise HTTPException(status_code=404, detail=f"Unit {unit_code} not found for given filters")
         
-    kpi_result = KpiCalculator.summarize_kpi(df_utama, df_events)
+    kpi_result = KpiCalculator.summarize_kpi(data_utama, events)
     
     events_list = []
-    if not df_events.empty:
-        for _, row in df_events.iterrows():
+    if events:
+        for row in events:
             events_list.append({
                 "time": str(row.get('Time', '')),
                 "status": str(row.get('Status', '')),
                 "start": str(row.get('Start', '')),
                 "stop": str(row.get('Stop', '')),
-                "durasi_jam": float(row.get('Durasi', 0.0))
+                "durasi_jam": float(row.get('Durasi', 0.0) or 0.0)
             })
             
     return UnitDetailResponse(
@@ -99,8 +100,8 @@ def get_all_unit_performance(
     filters = _get_filters(date_from, date_to, shift, pit, None, activity)
     repo = OptrackRepository()
     
-    df_utama = repo.get_data_utama_df(**filters)
-    df_events = repo.get_events_df(**filters)
+    data_utama = repo.get_data_utama(**filters)
+    events = repo.get_events(**filters)
     
-    results = KpiCalculator.calculate_all_units_kpi(df_utama, df_events)
+    results = KpiCalculator.calculate_all_units_kpi(data_utama, events)
     return {"data": results}

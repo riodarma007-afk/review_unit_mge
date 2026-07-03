@@ -35,8 +35,7 @@ def get_delay_pareto(
     filters = _get_filters(date_from, date_to, shift, pit, unit_code, activity)
     repo = OptrackRepository()
     
-    # We only need events, but repo.get_events_df handles the joins and filters automatically
-    df_events = repo.get_events_df(**filters)
+    events = repo.get_events(**filters)
     
-    result = DelayAnalysisService.calculate_pareto(df_events)
+    result = DelayAnalysisService.calculate_pareto(events)
     return DelayParetoResponse(**result)

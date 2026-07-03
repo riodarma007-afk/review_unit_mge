@@ -1,4 +1,3 @@
-import pandas as pd
 from backend.app.services.kpi_calculator import KpiCalculator
 
 def test_calculate_kpi_from_aggs():

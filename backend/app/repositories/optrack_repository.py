@@ -1,6 +1,5 @@
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import date
-import pandas as pd
 from app.core.database import get_db_connection
 
 class OptrackRepository:
@@ -34,7 +33,8 @@ class OptrackRepository:
         where_clause = " AND ".join(conditions)
         return where_clause, params
 
-    def get_data_utama_df(self, **filters) -> pd.DataFrame:
+    def get_data_utama(self, **filters) -> List[Dict[str, Any]]:
+        """Returns list of dicts instead of DataFrame"""
         where_clause, params = self._build_where_clause(**filters)
         query = f"""
             SELECT 
@@ -50,16 +50,15 @@ class OptrackRepository:
                 cursor.execute(query, params)
                 result = cursor.fetchall()
             conn.close()
-            return pd.DataFrame(result)
+            return list(result) if result else []
         except Exception as e:
-            print(f"Database error in get_data_utama_df: {e}")
-            return pd.DataFrame()
+            print(f"Database error in get_data_utama: {e}")
+            return []
 
-    def get_events_df(self, **filters) -> pd.DataFrame:
+    def get_events(self, **filters) -> List[Dict[str, Any]]:
+        """Returns list of dicts instead of DataFrame"""
         where_clause, params = self._build_where_clause(table_prefix="d", **filters)
         
-        # Join with optrack_data_event for filters, and LEFT JOIN with master event table
-        # to translate numeric event IDs to proper names
         query = f"""
             SELECT 
                 e.ID_data_input AS ID_data_Input, 
@@ -83,10 +82,10 @@ class OptrackRepository:
                 cursor.execute(query, params)
                 result = cursor.fetchall()
             conn.close()
-            return pd.DataFrame(result)
+            return list(result) if result else []
         except Exception as e:
-            print(f"Database error in get_events_df: {e}")
-            return pd.DataFrame()
+            print(f"Database error in get_events: {e}")
+            return []
 
     def get_filter_options(self):
         try:
@@ -96,25 +95,42 @@ class OptrackRepository:
                 cursor.execute(query)
                 result = cursor.fetchall()
             conn.close()
-            df = pd.DataFrame(result)
             
-            if df.empty:
+            if not result:
                 return {
                     "units": [], "pits": [], "shifts": [], "activities": [], 
                     "date_range": {"min": "", "max": ""}
                 }
-                
-            min_date = df['Date'].min()
-            max_date = df['Date'].max()
+            
+            units = set()
+            pits = set()
+            shifts = set()
+            activities = set()
+            dates = []
+            
+            for row in result:
+                if row.get('Unit_Code') is not None:
+                    units.add(row['Unit_Code'])
+                if row.get('PIT') is not None:
+                    pits.add(row['PIT'])
+                if row.get('Shift') is not None:
+                    shifts.add(row['Shift'])
+                if row.get('Activity') is not None:
+                    activities.add(row['Activity'])
+                if row.get('Date') is not None:
+                    dates.append(row['Date'])
+            
+            min_date = min(dates) if dates else ""
+            max_date = max(dates) if dates else ""
             
             return {
-                "units": sorted(df['Unit_Code'].dropna().unique().tolist()),
-                "pits": sorted(df['PIT'].dropna().unique().tolist()),
-                "shifts": sorted(df['Shift'].dropna().unique().tolist()),
-                "activities": sorted(df['Activity'].dropna().unique().tolist()),
+                "units": sorted(list(units)),
+                "pits": sorted(list(pits)),
+                "shifts": sorted(list(shifts)),
+                "activities": sorted(list(activities)),
                 "date_range": {
-                    "min": str(min_date) if pd.notna(min_date) else "",
-                    "max": str(max_date) if pd.notna(max_date) else ""
+                    "min": str(min_date) if min_date else "",
+                    "max": str(max_date) if max_date else ""
                 }
             }
         except Exception as e:
@@ -123,3 +139,12 @@ class OptrackRepository:
                 "units": [], "pits": [], "shifts": [], "activities": [], 
                 "date_range": {"min": "", "max": ""}
             }
+
+    # --- Backward-compatible aliases (old names) ---
+    def get_data_utama_df(self, **filters):
+        """Alias for backward compatibility - returns list of dicts"""
+        return self.get_data_utama(**filters)
+    
+    def get_events_df(self, **filters):
+        """Alias for backward compatibility - returns list of dicts"""
+        return self.get_events(**filters)
