@@ -34,7 +34,8 @@ const lastUpdatedText = computed(() => {
 <template>
   <!-- Top Navigation Bar -->
   <nav class="top-nav">
-    <div class="nav-logo" style="display: flex; align-items: center; gap: 1rem;">
+    <div class="top-nav-inner">
+      <div class="nav-logo" style="display: flex; align-items: center; gap: 1rem;">
       <img src="/optrack_png.png" alt="OpTrack Logo" style="height: 32px; width: auto;" />
       
       <!-- Filter Toggle Button -->
@@ -73,6 +74,7 @@ const lastUpdatedText = computed(() => {
         <img src="/planning_dept_logo.png" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
       </div>
 
+    </div>
     </div>
   </nav>
   
