@@ -39,8 +39,8 @@ const lastUpdatedText = computed(() => {
       <img src="/optrack_png.png" alt="OpTrack Logo" style="height: 32px; width: auto;" />
       
       <!-- Filter Toggle Button -->
-      <button @click="filterStore.showFilters = !filterStore.showFilters" style="border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; color: #475569; height: fit-content; cursor: pointer; transition: background 0.2s;">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button @click="filterStore.showFilters = !filterStore.showFilters" style="border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; font-size: 0.9rem; background: #eff6ff; border: 1.5px solid #3b82f6; color: #1d4ed8; height: fit-content; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(59,130,246,0.15);">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
           <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
           <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
