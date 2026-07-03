@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useKpiStore } from './stores/kpiStore';
 import OverviewView from './views/OverviewView.vue';
 
+const assetBase = import.meta.env.BASE_URL;
 const kpiStore = useKpiStore();
 const lastUpdatedText = computed(() => {
   if (!kpiStore.lastUpdated) return '--';
@@ -18,7 +19,7 @@ const lastUpdatedText = computed(() => {
   <!-- Top Navigation Bar -->
   <nav class="top-nav">
     <div class="nav-logo">
-      <img src="/optrack_png.png" alt="OpTrack Logo" style="height: 32px; width: auto;" />
+      <img :src="`${assetBase}optrack_png.png`" alt="OpTrack Logo" style="height: 32px; width: auto;" />
     </div>
     
     <div class="nav-tabs">
@@ -35,7 +36,7 @@ const lastUpdatedText = computed(() => {
         <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500; white-space: nowrap;">Updated {{ lastUpdatedText }}</span>
       </div>
       <div style="height: 16px; display: flex; align-items: center; margin-left: 12px;">
-        <img src="/planning_dept_logo.png" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
+        <img :src="`${assetBase}planning_dept_logo.png`" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
       </div>
     </div>
   </nav>
