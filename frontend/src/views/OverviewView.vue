@@ -459,7 +459,7 @@ const getBadgeColor = (code) => {
       </div>
 
       <!-- Row 2: Unit Carousel + Unit Event -->
-      <div class="card" style="padding: 0; overflow: hidden; min-height: 380px; margin-bottom: 1.5rem; display: flex; position: relative;">
+      <div class="card" style="padding: 0; overflow: hidden; min-height: 360px; margin-bottom: 1.5rem; display: flex; position: relative;">
         <!-- Unit Badge (Moved to top right of unified card) -->
         <div class="unit-badge" :style="{ backgroundColor: getBadgeColor(activeData?.unit_code) }">
           {{ activeData?.unit_code || '---' }}
@@ -472,7 +472,7 @@ const getBadgeColor = (code) => {
           </div>
 
           <!-- Unit Event Bar Chart -->
-          <div style="display: flex; flex-direction: column; height: 100%; padding: 1.25rem 1.25rem 1.5rem; grid-column: span 1;">
+          <div style="display: flex; flex-direction: column; height: 100%; padding: 1.25rem; grid-column: span 1;">
             
             <div v-if="activeData.events_pareto?.items?.length" class="event-pareto-list" style="flex: 1; padding-top: 1rem;">
               <div v-for="(item, idx) in activeData.events_pareto.items.slice(0, 10)" :key="idx" class="event-bar-row">
@@ -487,13 +487,6 @@ const getBadgeColor = (code) => {
             </div>
             <div v-else style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem;">
               No delay/breakdown events for this unit.
-            </div>
-
-            <!-- Total Badge placed at the bottom -->
-            <div style="display: flex; justify-content: flex-end; margin-top: auto; padding-top: 1rem;">
-              <span style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-main); padding: 6px 14px; border-radius: 20px;">
-                Total: <strong style="color: var(--text-primary);"><SmoothCounter :value="activeData.events_pareto?.total_delay_hours || 0" :decimals="1"/>h</strong>
-              </span>
             </div>
           </div>
         </div>
