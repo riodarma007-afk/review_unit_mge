@@ -11,7 +11,14 @@ const filterStore = useFilterStore();
 
 const summary = computed(() => kpiStore.summary || {});
 const trend = computed(() => kpiStore.trend || []);
-const unitPerfs = computed(() => kpiStore.unitPerformances || []);
+const unitPerfs = computed(() => {
+  const arr = kpiStore.unitPerformances || [];
+  return [...arr].sort((a, b) => {
+    if (!a.unit_code) return 1;
+    if (!b.unit_code) return -1;
+    return a.unit_code.localeCompare(b.unit_code, undefined, { numeric: true, sensitivity: 'base' });
+  });
+});
 const activeDateText = computed(() => {
   const p = summary.value?.period;
   if (p && p.date_from && p.date_to) {
