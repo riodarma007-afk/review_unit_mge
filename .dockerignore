@@ -1,0 +1,9 @@
+.git
+frontend
+backend/venv
+backend/.env
+backend/optrack.db
+**/__pycache__
+*.pyc
+*.db
+generate gambar
