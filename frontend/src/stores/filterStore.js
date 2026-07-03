@@ -19,7 +19,19 @@ export const useFilterStore = defineStore('filter', {
       date_range: { min: '', max: '' }
     },
     isLoading: false,
+    showFilters: false,
   }),
+  getters: {
+    activeFilterCount: (state) => {
+      let count = 0;
+      const f = state.filters;
+      if (f.shift) count++;
+      if (f.pit) count++;
+      if (f.unit_code) count++;
+      if (f.activity) count++;
+      return count;
+    }
+  },
   actions: {
     async fetchOptions() {
       this.isLoading = true;

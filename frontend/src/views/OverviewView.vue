@@ -8,22 +8,23 @@ import SmoothCounter from '../components/kpi/SmoothCounter.vue';
 const kpiStore = useKpiStore();
 const filterStore = useFilterStore();
 
-const showFilters = ref(true);
-const activeFilterCount = computed(() => {
-  const f = filterStore.filters;
-  let count = 0;
-  if (f.date_from) count++;
-  if (f.date_to && f.date_to !== f.date_from) count++;
-  if (f.shift) count++;
-  if (f.pit) count++;
-  if (f.unit_code) count++;
-  if (f.activity) count++;
-  return count;
-});
 
 const summary = computed(() => kpiStore.summary || {});
 const trend = computed(() => kpiStore.trend || []);
 const unitPerfs = computed(() => kpiStore.unitPerformances || []);
+const activeDateText = computed(() => {
+  const p = summary.value?.period;
+  if (p && p.date_from && p.date_to) {
+    if (p.date_from === p.date_to) return p.date_from;
+    return `${p.date_from} to ${p.date_to}`;
+  }
+  const f = filterStore.filters;
+  if (f.date_from && f.date_to) {
+    if (f.date_from === f.date_to) return f.date_from;
+    return `${f.date_from} to ${f.date_to}`;
+  }
+  return 'Semua Waktu';
+});
 const fuelData = computed(() => kpiStore.fuelData);
 const isFuelLoading = computed(() => kpiStore.isFuelLoading);
 const haulingData = computed(() => kpiStore.haulingData);
@@ -195,21 +196,8 @@ const getBadgeColor = (code) => {
 
 <template>
   <div class="page-wrapper animate-in">
-    <div style="display: flex; align-items: center; margin-top: -0.5rem; margin-bottom: 0.25rem; gap: 0.5rem;">
-      <button class="btn btn-outline" @click="showFilters = !showFilters" style="border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; color: #475569; height: fit-content;">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
-          <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
-          <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
-        </svg>
-        Filter
-        <span v-if="activeFilterCount > 0" style="background: #5c6ac4; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; margin-left: 0.1rem;">{{ activeFilterCount }}</span>
-      </button>
-    </div>
-
     <!-- Filter Bar -->
-    <div v-show="showFilters" class="card row filter-card" style="padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+    <div v-show="filterStore.showFilters" class="card row filter-card" style="padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
       <div class="filter-bar-inline" @focusin="kpiStore.stopAutoRefresh()" @focusout="kpiStore.startAutoRefresh()">
         <div class="filter-group">
           <label>Date From</label>
