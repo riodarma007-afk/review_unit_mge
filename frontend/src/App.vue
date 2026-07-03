@@ -34,8 +34,20 @@ const lastUpdatedText = computed(() => {
 <template>
   <!-- Top Navigation Bar -->
   <nav class="top-nav">
-    <div class="nav-logo">
+    <div class="nav-logo" style="display: flex; align-items: center; gap: 1rem;">
       <img src="/optrack_png.png" alt="OpTrack Logo" style="height: 32px; width: auto;" />
+      
+      <!-- Filter Toggle Button -->
+      <button @click="filterStore.showFilters = !filterStore.showFilters" style="border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; color: #475569; height: fit-content; cursor: pointer; transition: background 0.2s;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+        Filter
+        <span v-if="filterStore.activeFilterCount > 0" style="background: #5c6ac4; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; margin-left: 0.1rem;">{{ filterStore.activeFilterCount }}</span>
+      </button>
     </div>
     
     <div class="nav-tabs">
@@ -61,17 +73,6 @@ const lastUpdatedText = computed(() => {
         <img src="/planning_dept_logo.png" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
       </div>
 
-      <!-- Filter Toggle Button -->
-      <button @click="filterStore.showFilters = !filterStore.showFilters" style="border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; color: #475569; height: fit-content; cursor: pointer; transition: background 0.2s;">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
-          <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
-          <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
-        </svg>
-        Filter
-        <span v-if="filterStore.activeFilterCount > 0" style="background: #5c6ac4; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; margin-left: 0.1rem;">{{ filterStore.activeFilterCount }}</span>
-      </button>
     </div>
   </nav>
   
