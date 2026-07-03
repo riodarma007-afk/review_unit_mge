@@ -195,17 +195,16 @@ const getBadgeColor = (code) => {
 
 <template>
   <div class="page-wrapper animate-in">
-    
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 0.75rem;">
-      <button class="btn btn-outline" @click="showFilters = !showFilters" style="border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div style="display: flex; align-items: center; margin-bottom: 0.75rem; gap: 0.5rem;">
+      <button class="btn btn-outline" @click="showFilters = !showFilters" style="border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; color: #475569; height: fit-content;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
           <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
           <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
           <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
         </svg>
         Filter
-        <span v-if="activeFilterCount > 0" style="background: #316bfd; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; margin-left: 0.2rem;">{{ activeFilterCount }}</span>
+        <span v-if="activeFilterCount > 0" style="background: #5c6ac4; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; margin-left: 0.1rem;">{{ activeFilterCount }}</span>
       </button>
     </div>
 
