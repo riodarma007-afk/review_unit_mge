@@ -58,6 +58,65 @@ const isTransitLoading = computed(() => kpiStore.isTransitLoading);
 const obData = computed(() => kpiStore.obData);
 const isObLoading = computed(() => kpiStore.isObLoading);
 
+// Fuel Analysis Metrics
+const fuelAnalysis = computed(() => {
+  const fData = fuelData.value;
+  const hData = haulingData.value;
+  const tData = transitData.value;
+  const unit = selectedUnit.value || kpiStore._currentUnitCode || '';
+  
+  if (!fData || !fData.total_liters) return null;
+  
+  const totalFuel = fData.total_liters;
+  let totalTonnage = 0;
+  let totalTrips = 0;
+  
+  // Aggregate from hauling and transit
+  if (hData) {
+    totalTonnage += hData.total_tonage || 0;
+    totalTrips += hData.trip_count || 0;
+  }
+  if (tData && tData.total_netto) {
+    totalTonnage += tData.total_netto || 0;
+    totalTrips += tData.total_trips || 0;
+  }
+  // Fallback: If no hauling/transit data but we have activeData ritasi, use that for trips
+  if (totalTrips === 0 && activeData.value?.ritasi) {
+    totalTrips = activeData.value.ritasi;
+  }
+  
+  if (totalTonnage === 0 && totalTrips > 0) {
+    // If no tonnage data from API, fallback to default estimates for analysis demonstration
+    const isVolvo = unit.toUpperCase().includes('VOLVO') || unit.toUpperCase().includes('72') || unit.toUpperCase().includes('73');
+    const isSany = unit.toUpperCase().includes('SANY') || unit.toUpperCase().includes('74');
+    const defaultTon = isVolvo ? 40.27 : (isSany ? 41.08 : 42.40);
+    totalTonnage = totalTrips * defaultTon;
+  }
+
+  // Distance Constant based on Fuel Team (Volvo: 28.81, Sany: 27.75, Shacman: 28.60)
+  const isVolvo = unit.toUpperCase().includes('VOLVO') || unit.toUpperCase().includes('72') || unit.toUpperCase().includes('73');
+  const isSany = unit.toUpperCase().includes('SANY') || unit.toUpperCase().includes('74');
+  const distancePerTrip = isVolvo ? 28.81 : (isSany ? 27.75 : 28.60);
+  const totalDistance = totalTrips * distancePerTrip;
+
+  const ltrPerTon = totalTonnage > 0 ? (totalFuel / totalTonnage) : 0;
+  const ltrPerKm = totalDistance > 0 ? (totalFuel / totalDistance) : 0;
+  const sfc = (totalTonnage > 0 && totalDistance > 0) ? (totalFuel / (totalTonnage * totalDistance)) : 0;
+  
+  // Target SFC is ~0.033, > 0.035 is bad (red)
+  const isGoodSfc = sfc > 0 && sfc <= 0.034;
+  
+  return {
+    totalFuel,
+    totalTonnage,
+    totalDistance,
+    ltrPerTon,
+    ltrPerKm,
+    sfc,
+    isGoodSfc
+  };
+});
+
 // Auto-refresh
 const countdown = ref(kpiStore.autoRefreshInterval);
 let countdownTimer = null;
@@ -608,22 +667,28 @@ const getBadgeColor = (code) => {
             </div>
             <template v-else>
               <div class="big-metric-display" style="margin-bottom: 5px;">
-                <span class="big-metric-value" style="color: #d97706;"><SmoothCounter :value="fuelData?.average_liter_per_hm || 0" :decimals="2" /></span>
-                <span class="big-metric-unit">L/HM</span>
+                <span class="big-metric-value" :style="{ color: fuelAnalysis?.isGoodSfc ? '#10b981' : '#ef4444' }">
+                  <SmoothCounter :value="fuelAnalysis?.sfc || 0" :decimals="3" />
+                </span>
+                <span class="big-metric-unit">SFC</span>
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;">
                 <div style="background: #fffbeb; padding: 6px; border-radius: 8px; text-align: center;">
-                  <div style="font-size: 0.7rem; color: #b45309; font-weight: 600; text-transform: uppercase;">Distance</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #78350f;">{{ fuelData?.total_distance_km ? fuelData.total_distance_km + ' km' : '-' }}</div>
+                  <div style="font-size: 0.7rem; color: #b45309; font-weight: 600; text-transform: uppercase;">Ltr / Ton</div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #78350f;"><SmoothCounter :value="fuelAnalysis?.ltrPerTon || 0" :decimals="2" /></div>
                 </div>
                 <div style="background: #f0fdf4; padding: 6px; border-radius: 8px; text-align: center;">
-                  <div style="font-size: 0.7rem; color: #15803d; font-weight: 600; text-transform: uppercase;">HM Used</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #14532d;">{{ fuelData?.total_hm_used ? fuelData.total_hm_used + ' hm' : '-' }}</div>
+                  <div style="font-size: 0.7rem; color: #15803d; font-weight: 600; text-transform: uppercase;">Ltr / KM</div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #14532d;"><SmoothCounter :value="fuelAnalysis?.ltrPerKm || 0" :decimals="2" /></div>
                 </div>
-                <div style="background: #eff6ff; padding: 6px; border-radius: 8px; text-align: center; grid-column: span 2;">
-                  <div style="font-size: 0.7rem; color: #1d4ed8; font-weight: 600; text-transform: uppercase;">Ratio (KM/L)</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #1e3a8a;">{{ fuelData?.average_km_per_liter || '-' }}</div>
+                <div style="background: #eff6ff; padding: 6px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 0.7rem; color: #1d4ed8; font-weight: 600; text-transform: uppercase;">Total Tonnage</div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #1e3a8a;"><SmoothCounter :value="fuelAnalysis?.totalTonnage || 0" :decimals="1" /></div>
+                </div>
+                <div style="background: #f3e8ff; padding: 6px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 0.7rem; color: #7e22ce; font-weight: 600; text-transform: uppercase;">Total Distance</div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #581c87"><SmoothCounter :value="fuelAnalysis?.totalDistance || 0" :decimals="1" /></div>
                 </div>
               </div>
             </template>
