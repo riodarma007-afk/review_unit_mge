@@ -681,17 +681,19 @@ const getBadgeColor = (code) => {
                   <div style="font-size: 0.7rem; color: #15803d; font-weight: 600; text-transform: uppercase;">HM Used</div>
                   <div style="font-size: 0.9rem; font-weight: 700; color: #14532d;">{{ fuelData?.total_hm_used ? fuelData.total_hm_used + ' hm' : '-' }}</div>
                 </div>
-                <div style="background: #eff6ff; padding: 6px; border-radius: 8px; text-align: center; grid-column: span 2;">
-                  <div style="font-size: 0.7rem; color: #1d4ed8; font-weight: 600; text-transform: uppercase;">Ratio (KM/L)</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #1e3a8a;">{{ fuelData?.average_km_per_liter || '-' }}</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; margin-top: 8px;">
+                <div style="background: #eff6ff; padding: 6px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 0.65rem; color: #1d4ed8; font-weight: 600; text-transform: uppercase;">Ratio(KM/L)</div>
+                  <div style="font-size: 0.85rem; font-weight: 700; color: #1e3a8a;">{{ fuelData?.average_km_per_liter || '-' }}</div>
                 </div>
                 <div style="background: #fffbeb; padding: 6px; border-radius: 8px; text-align: center;">
-                  <div style="font-size: 0.7rem; color: #b45309; font-weight: 600; text-transform: uppercase;">Ltr / Ton</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #78350f;"><SmoothCounter :value="fuelAnalysis?.ltrPerTon || 0" :decimals="2" /></div>
+                  <div style="font-size: 0.65rem; color: #b45309; font-weight: 600; text-transform: uppercase;">Ltr / Ton</div>
+                  <div style="font-size: 0.85rem; font-weight: 700; color: #78350f;"><SmoothCounter :value="fuelAnalysis?.ltrPerTon || 0" :decimals="2" /></div>
                 </div>
                 <div :style="{ background: fuelAnalysis?.isGoodSfc ? '#f0fdf4' : '#fef2f2', padding: '6px', borderRadius: '8px', textAlign: 'center' }">
-                  <div :style="{ fontSize: '0.7rem', color: fuelAnalysis?.isGoodSfc ? '#15803d' : '#991b1b', fontWeight: '600', textTransform: 'uppercase' }">SFC</div>
-                  <div :style="{ fontSize: '0.9rem', fontWeight: '700', color: fuelAnalysis?.isGoodSfc ? '#14532d' : '#7f1d1d' }"><SmoothCounter :value="fuelAnalysis?.sfc || 0" :decimals="3" /></div>
+                  <div :style="{ fontSize: '0.65rem', color: fuelAnalysis?.isGoodSfc ? '#15803d' : '#991b1b', fontWeight: '600', textTransform: 'uppercase' }">SFC</div>
+                  <div :style="{ fontSize: '0.85rem', fontWeight: '700', color: fuelAnalysis?.isGoodSfc ? '#14532d' : '#7f1d1d' }"><SmoothCounter :value="fuelAnalysis?.sfc || 0" :decimals="3" /></div>
                 </div>
               </div>
             </template>
