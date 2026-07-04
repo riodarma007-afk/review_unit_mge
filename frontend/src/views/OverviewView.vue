@@ -58,6 +58,50 @@ const isTransitLoading = computed(() => kpiStore.isTransitLoading);
 const obData = computed(() => kpiStore.obData);
 const isObLoading = computed(() => kpiStore.isObLoading);
 
+// Auto-refresh
+const countdown = ref(kpiStore.autoRefreshInterval);
+let countdownTimer = null;
+
+
+
+const startCountdown = () => {
+  stopCountdown();
+  countdown.value = kpiStore.autoRefreshInterval;
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--;
+    } else {
+      countdown.value = kpiStore.autoRefreshInterval;
+    }
+  }, 1000);
+};
+
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+};
+
+const handleForceRefresh = async () => {
+  await kpiStore.forceRefreshAll();
+  countdown.value = kpiStore.autoRefreshInterval;
+};
+
+// State for currently selected unit in Carousel
+const selectedUnit = ref(null);
+const isCarouselPaused = ref(false);
+const activeData = computed(() => {
+  if (selectedUnit.value && Object.keys(selectedUnit.value).length > 0) return selectedUnit.value;
+  if (unitPerfs.value && unitPerfs.value.length > 0) return unitPerfs.value[0];
+  return {};
+});
+
+const isOBUnit = computed(() => {
+  const unit = activeData.value?.unit_code;
+  return unit ? unit.toUpperCase().startsWith('GMT') : false;
+});
+
 // Fuel Analysis Metrics
 const fuelAnalysis = computed(() => {
   const fData = fuelData.value;
@@ -115,50 +159,6 @@ const fuelAnalysis = computed(() => {
     sfc,
     isGoodSfc
   };
-});
-
-// Auto-refresh
-const countdown = ref(kpiStore.autoRefreshInterval);
-let countdownTimer = null;
-
-
-
-const startCountdown = () => {
-  stopCountdown();
-  countdown.value = kpiStore.autoRefreshInterval;
-  countdownTimer = setInterval(() => {
-    if (countdown.value > 0) {
-      countdown.value--;
-    } else {
-      countdown.value = kpiStore.autoRefreshInterval;
-    }
-  }, 1000);
-};
-
-const stopCountdown = () => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
-  }
-};
-
-const handleForceRefresh = async () => {
-  await kpiStore.forceRefreshAll();
-  countdown.value = kpiStore.autoRefreshInterval;
-};
-
-// State for currently selected unit in Carousel
-const selectedUnit = ref(null);
-const isCarouselPaused = ref(false);
-const activeData = computed(() => {
-  if (selectedUnit.value && Object.keys(selectedUnit.value).length > 0) return selectedUnit.value;
-  if (unitPerfs.value && unitPerfs.value.length > 0) return unitPerfs.value[0];
-  return {};
-});
-
-const isOBUnit = computed(() => {
-  const unit = activeData.value?.unit_code;
-  return unit ? unit.toUpperCase().startsWith('GMT') : false;
 });
 
 // Top 5 units by PA
