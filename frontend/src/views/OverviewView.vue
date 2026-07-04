@@ -123,7 +123,7 @@ const fuelAnalysis = computed(() => {
   }
   if (tData && tData.total_netto) {
     totalTonnage += tData.total_netto || 0;
-    totalTrips += tData.total_trips || 0;
+    totalTrips += tData.total_ritasi || 0;
   }
   // Fallback: If no hauling/transit data but we have activeData ritasi, use that for trips
   if (totalTrips === 0 && activeData.value?.ritasi) {
