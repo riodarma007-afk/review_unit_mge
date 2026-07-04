@@ -146,7 +146,8 @@ const fuelAnalysis = computed(() => {
 
   const ltrPerTon = totalTonnage > 0 ? (totalFuel / totalTonnage) : 0;
   const ltrPerKm = totalDistance > 0 ? (totalFuel / totalDistance) : 0;
-  const sfc = (totalTonnage > 0 && totalDistance > 0) ? (totalFuel / (totalTonnage * totalDistance)) : 0;
+  const tonKm = totalTonnage * distancePerTrip;
+  const sfc = tonKm > 0 ? (totalFuel / tonKm) : 0;
   
   // Target SFC is ~0.033, > 0.035 is bad (red)
   const isGoodSfc = sfc > 0 && sfc <= 0.034;
