@@ -16,6 +16,23 @@ const unitPerfs = computed(() => {
   return [...arr].sort((a, b) => {
     if (!a.unit_code) return 1;
     if (!b.unit_code) return -1;
+    
+    const regex = /^([a-zA-Z]+)[\s-]*(\d+)/;
+    const matchA = a.unit_code.match(regex);
+    const matchB = b.unit_code.match(regex);
+
+    if (matchA && matchB) {
+      const prefixA = matchA[1].toUpperCase();
+      const prefixB = matchB[1].toUpperCase();
+      const numA = parseInt(matchA[2], 10);
+      const numB = parseInt(matchB[2], 10);
+
+      if (prefixA !== prefixB) {
+        return prefixA.localeCompare(prefixB);
+      }
+      return numA - numB;
+    }
+    
     return a.unit_code.localeCompare(b.unit_code, undefined, { numeric: true, sensitivity: 'base' });
   });
 });
