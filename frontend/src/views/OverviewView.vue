@@ -668,10 +668,8 @@ const getBadgeColor = (code) => {
             </div>
             <template v-else>
               <div class="big-metric-display" style="margin-bottom: 5px;">
-                <span class="big-metric-value" :style="{ color: fuelAnalysis?.isGoodSfc ? '#10b981' : '#ef4444' }">
-                  <SmoothCounter :value="fuelAnalysis?.sfc || 0" :decimals="3" />
-                </span>
-                <span class="big-metric-unit">SFC</span>
+                <span class="big-metric-value" style="color: #d97706;"><SmoothCounter :value="fuelData?.average_liter_per_hm || 0" :decimals="2" /></span>
+                <span class="big-metric-unit">L/HM</span>
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;">
@@ -679,17 +677,9 @@ const getBadgeColor = (code) => {
                   <div style="font-size: 0.7rem; color: #b45309; font-weight: 600; text-transform: uppercase;">Ltr / Ton</div>
                   <div style="font-size: 0.9rem; font-weight: 700; color: #78350f;"><SmoothCounter :value="fuelAnalysis?.ltrPerTon || 0" :decimals="2" /></div>
                 </div>
-                <div style="background: #f0fdf4; padding: 6px; border-radius: 8px; text-align: center;">
-                  <div style="font-size: 0.7rem; color: #15803d; font-weight: 600; text-transform: uppercase;">Ltr / KM</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #14532d;"><SmoothCounter :value="fuelAnalysis?.ltrPerKm || 0" :decimals="2" /></div>
-                </div>
-                <div style="background: #eff6ff; padding: 6px; border-radius: 8px; text-align: center;">
-                  <div style="font-size: 0.7rem; color: #1d4ed8; font-weight: 600; text-transform: uppercase;">Total Tonnage</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #1e3a8a;"><SmoothCounter :value="fuelAnalysis?.totalTonnage || 0" :decimals="1" /></div>
-                </div>
-                <div style="background: #f3e8ff; padding: 6px; border-radius: 8px; text-align: center;">
-                  <div style="font-size: 0.7rem; color: #7e22ce; font-weight: 600; text-transform: uppercase;">Total Distance</div>
-                  <div style="font-size: 0.9rem; font-weight: 700; color: #581c87"><SmoothCounter :value="fuelAnalysis?.totalDistance || 0" :decimals="1" /></div>
+                <div :style="{ background: fuelAnalysis?.isGoodSfc ? '#f0fdf4' : '#fef2f2', padding: '6px', borderRadius: '8px', textAlign: 'center' }">
+                  <div :style="{ fontSize: '0.7rem', color: fuelAnalysis?.isGoodSfc ? '#15803d' : '#991b1b', fontWeight: '600', textTransform: 'uppercase' }">SFC</div>
+                  <div :style="{ fontSize: '0.9rem', fontWeight: '700', color: fuelAnalysis?.isGoodSfc ? '#14532d' : '#7f1d1d' }"><SmoothCounter :value="fuelAnalysis?.sfc || 0" :decimals="3" /></div>
                 </div>
               </div>
             </template>
