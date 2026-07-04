@@ -88,10 +88,11 @@ const fmt = (val) => {
 };
 
 const getImageUrl = (unitCode) => {
-  if (!unitCode) return '/units/GHT-701.jpg'; // Fallback
+  const base = import.meta.env.BASE_URL;
+  if (!unitCode) return `${base}units/GHT-701.jpg`; // Fallback
   // Format "GHT 701" -> "GHT-701"
   const formattedName = unitCode.replace(' ', '-');
-  return `/units/${formattedName}.jpg`;
+  return `${base}units/${formattedName}.jpg`;
 };
 const getBadgeColor = (unitCode) => {
   if (!unitCode) return '#10b981';
