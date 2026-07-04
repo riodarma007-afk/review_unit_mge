@@ -734,15 +734,19 @@ const getBadgeColor = (code) => {
                 </div>
                 
                 <!-- Grid with sub-metrics -->
-                <div style="display: grid; grid-template-columns: 1fr; gap: 8px; width: 100%; margin-top: 5px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;">
                   <div style="background: #fff7ed; padding: 6px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 0.7rem; color: #c2410c; font-weight: 600; text-transform: uppercase;">Average Payload</div>
-                    <div style="font-size: 0.9rem; font-weight: 700; color: #7c2d12;">{{ haulingData?.avg_payload || 0 }} Ton / Trip</div>
+                    <div style="font-size: 0.65rem; color: #c2410c; font-weight: 600; text-transform: uppercase;">Avg Payload</div>
+                    <div style="font-size: 0.9rem; font-weight: 700; color: #7c2d12;">{{ haulingData?.avg_payload || 0 }} Ton</div>
                   </div>
-                  <div style="background: #f0fdf4; padding: 6px; border-radius: 8px; text-align: center;">
+                  <div style="background: #eff6ff; padding: 6px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.65rem; color: #1d4ed8; font-weight: 600; text-transform: uppercase;">Load + Queue</div>
+                    <div style="font-size: 0.9rem; font-weight: 700; color: #1e3a8a;">{{ haulingData?.avg_loading_time || 0 }} Min</div>
+                  </div>
+                  <div style="background: #f0fdf4; padding: 6px; border-radius: 8px; text-align: center; grid-column: span 2;">
                     <div style="font-size: 0.7rem; color: #15803d; font-weight: 600; text-transform: uppercase;">Material</div>
                     <div style="font-size: 0.8rem; font-weight: 600; color: #14532d; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 2px;">
-                      <span v-for="(count, prod) in haulingData?.products" :key="prod" style="background: #dcfce7; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem;">
+                      <span v-for="(count, prod) in (haulingData?.products_breakdown || haulingData?.products || {})" :key="prod" style="background: #dcfce7; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem;">
                         {{ prod }}: {{ count }}
                       </span>
                     </div>
