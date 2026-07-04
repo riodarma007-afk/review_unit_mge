@@ -674,6 +674,18 @@ const getBadgeColor = (code) => {
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;">
                 <div style="background: #fffbeb; padding: 6px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 0.7rem; color: #b45309; font-weight: 600; text-transform: uppercase;">Distance</div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #78350f;">{{ fuelData?.total_distance_km ? fuelData.total_distance_km + ' km' : '-' }}</div>
+                </div>
+                <div style="background: #f0fdf4; padding: 6px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 0.7rem; color: #15803d; font-weight: 600; text-transform: uppercase;">HM Used</div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #14532d;">{{ fuelData?.total_hm_used ? fuelData.total_hm_used + ' hm' : '-' }}</div>
+                </div>
+                <div style="background: #eff6ff; padding: 6px; border-radius: 8px; text-align: center; grid-column: span 2;">
+                  <div style="font-size: 0.7rem; color: #1d4ed8; font-weight: 600; text-transform: uppercase;">Ratio (KM/L)</div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #1e3a8a;">{{ fuelData?.average_km_per_liter || '-' }}</div>
+                </div>
+                <div style="background: #fffbeb; padding: 6px; border-radius: 8px; text-align: center;">
                   <div style="font-size: 0.7rem; color: #b45309; font-weight: 600; text-transform: uppercase;">Ltr / Ton</div>
                   <div style="font-size: 0.9rem; font-weight: 700; color: #78350f;"><SmoothCounter :value="fuelAnalysis?.ltrPerTon || 0" :decimals="2" /></div>
                 </div>
