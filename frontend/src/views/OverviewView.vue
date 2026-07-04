@@ -107,7 +107,8 @@ const fuelAnalysis = computed(() => {
   const fData = fuelData.value;
   const hData = haulingData.value;
   const tData = transitData.value;
-  const unit = selectedUnit.value || kpiStore._currentUnitCode || '';
+  const unitObj = selectedUnit.value;
+  const unit = (unitObj && unitObj.unit_code) ? unitObj.unit_code : (kpiStore._currentUnitCode || '');
   
   if (!fData || !fData.total_liters) return null;
   
