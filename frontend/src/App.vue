@@ -76,7 +76,6 @@ const lastUpdatedText = computed(() => {
       </div>
 
     </div>
-    </div>
   </nav>
   
   <!-- Main Content -->
