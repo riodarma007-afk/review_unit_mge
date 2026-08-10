@@ -436,7 +436,7 @@ const getBadgeColor = (code) => {
             <div class="kpi-header">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="kpi-dot" style="background: #22c55e;"></span>
-                <span class="kpi-title">Total Tonase</span>
+                <span class="kpi-title">Actual Payload</span>
               </div>
               <div class="kpi-icon-wrapper" style="background: #f0fdf4; color: #22c55e;">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -445,20 +445,16 @@ const getBadgeColor = (code) => {
               </div>
             </div>
             <div class="kpi-body">
-              <div v-if="isHaulingLoading" style="display:flex;align-items:center;gap:8px;">
+              <div v-if="isHaulingLoading || isTransitLoading" style="display:flex;align-items:center;gap:8px;">
                 <div class="spinner" style="width:20px;height:20px;border-width:2px;"></div>
                 <span style="font-size:0.85rem;color:var(--text-muted);">Loading...</span>
               </div>
               <div v-else>
-                <span v-if="haulingData?.total_tonage === 0 || !haulingData?.total_tonage" class="kpi-value">-</span>
-                <span v-else class="kpi-value"><SmoothCounter :value="haulingData?.total_tonage || 0" :decimals="1" /></span>
+                <!-- Priority: Transit (netto/ritasi) > Hauling (tonage/trip) -->
+                <span v-if="transitData?.total_ritasi > 0" class="kpi-value"><SmoothCounter :value="transitData.total_netto / transitData.total_ritasi" :decimals="1" /></span>
+                <span v-else-if="haulingData?.trip_count > 0" class="kpi-value"><SmoothCounter :value="(haulingData.total_tonage || 0) / haulingData.trip_count" :decimals="1" /></span>
+                <span v-else class="kpi-value">-</span>
                 <span class="kpi-suffix"> Ton</span>
-              </div>
-              <div style="margin-top: 8px;">
-                <span class="kpi-badge" style="background: #f0fdf4; color: #166534;">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                  {{ haulingData?.trip_count || 0 }}x Trip
-                </span>
               </div>
             </div>
           </template>
@@ -502,7 +498,7 @@ const getBadgeColor = (code) => {
           <div class="kpi-header">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <span class="kpi-dot" style="background: #0ea5e9;"></span>
-              <span class="kpi-title">Netto Ritasi Total</span>
+              <span class="kpi-title">Actual Produksi</span>
             </div>
             <div class="kpi-icon-wrapper" style="background: #f0f9ff; color: #0ea5e9;">
               <!-- Layers/Ritasi icon -->
@@ -514,18 +510,21 @@ const getBadgeColor = (code) => {
             </div>
           </div>
           <div class="kpi-body">
-            <div v-if="isTransitLoading" style="display:flex;align-items:center;gap:8px;">
+            <div v-if="isTransitLoading || isHaulingLoading" style="display:flex;align-items:center;gap:8px;">
               <div class="spinner" style="width:20px;height:20px;border-width:2px;"></div>
               <span style="font-size:0.85rem;color:var(--text-muted);">Loading...</span>
             </div>
             <div v-else>
-              <span class="kpi-value"><SmoothCounter :value="transitData?.total_netto || 0" :decimals="1" /></span>
+              <!-- Priority: Transit (netto) > Hauling (tonage) -->
+              <span v-if="transitData?.total_netto > 0" class="kpi-value"><SmoothCounter :value="transitData.total_netto" :decimals="1" /></span>
+              <span v-else-if="haulingData?.total_tonage > 0" class="kpi-value"><SmoothCounter :value="haulingData.total_tonage" :decimals="1" /></span>
+              <span v-else class="kpi-value">-</span>
               <span class="kpi-suffix"> Ton</span>
             </div>
             <div style="margin-top: 8px;">
-              <span class="kpi-badge" style="background: #f0f9ff; color: #0369a1;">
-                {{ transitData?.total_ritasi || 0 }} Rit
-              </span>
+              <span v-if="transitData?.total_ritasi > 0" class="kpi-badge" style="background: #f0f9ff; color: #0369a1;">{{ transitData.total_ritasi }} Rit</span>
+              <span v-else-if="haulingData?.trip_count > 0" class="kpi-badge" style="background: #f0fdf4; color: #166534;">{{ haulingData.trip_count }}x Trip</span>
+              <span v-else class="kpi-badge" style="background: #f0f9ff; color: #0369a1;">0 Rit</span>
             </div>
           </div>
         </div>
