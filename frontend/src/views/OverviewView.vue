@@ -456,10 +456,6 @@ const getBadgeColor = (code) => {
                 <span v-else class="kpi-value">-</span>
                 <span class="kpi-suffix"> Ton/Trip</span>
               </div>
-              <div style="margin-top: 8px;">
-                <span v-if="transitData?.total_ritasi > 0" class="kpi-badge" style="background: #f0fdf4; color: #166534;">{{ transitData.total_ritasi }} Rit</span>
-                <span v-else-if="haulingData?.trip_count > 0" class="kpi-badge" style="background: #f0fdf4; color: #166534;">{{ haulingData.trip_count }}x Trip</span>
-              </div>
             </div>
           </template>
           <template v-else>
