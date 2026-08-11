@@ -202,8 +202,11 @@ class KpiCalculator:
         return results
 
     @staticmethod
-    def calculate_all_units_kpi(data_utama: List[Dict], events: List[Dict]) -> list:
+    def calculate_all_units_kpi(data_utama: List[Dict], events: List[Dict], plan_data: Dict[str, float] = None) -> list:
         """Hitung KPI lengkap untuk semua unit, mengembalikan list of dict"""
+        if plan_data is None:
+            plan_data = {}
+            
         if not data_utama:
             return []
         
@@ -320,10 +323,19 @@ class KpiCalculator:
             unit_events_raw = events_pareto_map.get(unit, {})
             unit_events = []
             for evt_status, evt_durasi in sorted(unit_events_raw.items(), key=lambda x: x[1], reverse=True):
+                matched_plan_hours = 0.0
+                for p_name, p_hours in plan_data.items():
+                    if p_name.lower() == evt_status.lower():
+                        matched_plan_hours = p_hours
+                        break
+                        
                 unit_events.append({
                     "status": evt_status,
                     "code": 0,
-                    "hours": round(evt_durasi, 2)
+                    "hours": round(evt_durasi, 2),
+                    "plan_hours": round(matched_plan_hours, 2),
+                    "percent": 0.0,
+                    "cumulative_percent": 0.0
                 })
             
             total_delay = sum(e['hours'] for e in unit_events)

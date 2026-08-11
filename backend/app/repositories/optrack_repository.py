@@ -140,6 +140,50 @@ class OptrackRepository:
                 "date_range": {"min": "", "max": ""}
             }
 
+    def get_spo_plan(self, date_from: Optional[date] = None, date_to: Optional[date] = None, pit: Optional[str] = None, activity: Optional[str] = None) -> Dict[str, float]:
+        """Fetch aggregated plan hours per losstime_name based on filters."""
+        params = {}
+        conditions = []
+        if date_from:
+            conditions.append("date >= %(date_from)s")
+            params['date_from'] = date_from
+        if date_to:
+            conditions.append("date <= %(date_to)s")
+            params['date_to'] = date_to
+        if pit:
+            conditions.append("pit = %(pit)s")
+            params['pit'] = pit
+            
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        queries = []
+        # If activity is explicit, pick the right table. Otherwise, sum both tables.
+        # Note: Event mapping already unified the names.
+        if activity == 'OB' or activity == 'OB Removal':
+            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_ob WHERE {where_clause}")
+        elif activity == 'Hauling' or activity == 'Coal Hauling':
+            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_coal WHERE {where_clause}")
+        else:
+            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_ob WHERE {where_clause}")
+            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_coal WHERE {where_clause}")
+            
+        final_query = " UNION ALL ".join(queries)
+        agg_query = f"SELECT losstime_name, SUM(plan_hours) FROM ({final_query}) as t GROUP BY losstime_name"
+        
+        plan_dict = {}
+        try:
+            conn = get_db_connection()
+            with conn.cursor() as cursor:
+                cursor.execute(agg_query, params)
+                for row in cursor.fetchall():
+                    name, hours = row.values() if isinstance(row, dict) else (row[0], row[1])
+                    plan_dict[name] = float(hours or 0.0)
+            conn.close()
+        except Exception as e:
+            print(f"Database error in get_spo_plan: {e}")
+            
+        return plan_dict
+
     # --- Backward-compatible aliases (old names) ---
     def get_data_utama_df(self, **filters):
         """Alias for backward compatibility - returns list of dicts"""

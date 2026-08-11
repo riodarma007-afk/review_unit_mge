@@ -103,5 +103,7 @@ def get_all_unit_performance(
     data_utama = repo.get_data_utama(**filters)
     events = repo.get_events(**filters)
     
-    results = KpiCalculator.calculate_all_units_kpi(data_utama, events)
+    plan_data = repo.get_spo_plan(date_from, date_to, pit, activity)
+    
+    results = KpiCalculator.calculate_all_units_kpi(data_utama, events, plan_data)
     return {"data": results}

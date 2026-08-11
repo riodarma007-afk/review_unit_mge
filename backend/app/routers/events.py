@@ -37,5 +37,7 @@ def get_delay_pareto(
     
     events = repo.get_events(**filters)
     
-    result = DelayAnalysisService.calculate_pareto(events)
+    plan_data = repo.get_spo_plan(date_from, date_to, pit, activity)
+    
+    result = DelayAnalysisService.calculate_pareto(events, plan_data)
     return DelayParetoResponse(**result)

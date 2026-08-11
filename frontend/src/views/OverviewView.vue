@@ -550,10 +550,16 @@ const getBadgeColor = (code) => {
               <div v-for="(item, idx) in activeData.events_pareto.items.slice(0, 10)" :key="idx" class="event-bar-row">
                 <div class="event-bar-header">
                   <span class="event-name">{{ item.status }}</span>
-                  <span class="event-hours"><SmoothCounter :value="item.hours" :decimals="1"/>h</span>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span class="event-hours" :class="{ 'over-plan': item.plan_hours > 0 && item.hours > item.plan_hours }">
+                      <SmoothCounter :value="item.hours" :decimals="1"/>h
+                    </span>
+                    <span v-if="item.plan_hours > 0" class="event-plan-label">/ {{ item.plan_hours }}h</span>
+                  </div>
                 </div>
                 <div class="event-bar-bg">
-                  <div class="event-bar-fill" :style="{ width: (item.hours / activeData.events_pareto.items[0].hours * 100) + '%' }"></div>
+                  <div class="event-bar-fill" :class="{ 'over-plan-bar': item.plan_hours > 0 && item.hours > item.plan_hours }" :style="{ width: (item.hours / activeData.events_pareto.items[0].hours * 100) + '%' }"></div>
+                  <div v-if="item.plan_hours > 0" class="event-plan-marker" :style="{ left: Math.min(item.plan_hours / activeData.events_pareto.items[0].hours * 100, 100) + '%' }" :title="'Plan: ' + item.plan_hours + 'h'"></div>
                 </div>
               </div>
             </div>
@@ -1047,8 +1053,9 @@ const getBadgeColor = (code) => {
   height: 6px;
   background: #f1f3f6;
   border-radius: 3px;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
+  position: relative;
 }
 
 .event-bar-fill {
@@ -1056,6 +1063,33 @@ const getBadgeColor = (code) => {
   background: #fd8431;
   border-radius: 3px;
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.event-bar-fill.over-plan-bar {
+  background: linear-gradient(90deg, #fd8431 60%, #ef4444 100%);
+}
+
+.event-plan-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  background: #1e293b;
+  border-radius: 1px;
+  z-index: 2;
+  opacity: 0.7;
+  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.event-plan-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.event-hours.over-plan {
+  color: #ef4444;
+  font-weight: 700;
 }
 
 /* ========= ANALYSIS CARDS (Row 3) ========= */

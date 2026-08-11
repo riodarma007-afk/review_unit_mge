@@ -14,12 +14,15 @@ def _safe_float(val, default=0.0):
 
 class DelayAnalysisService:
     @staticmethod
-    def calculate_pareto(events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def calculate_pareto(events: List[Dict[str, Any]], plan_data: Dict[str, float] = None) -> Dict[str, Any]:
         """
         Menghitung pareto delay operasional dan breakdown (all events atau non-mechanical, 
         kita hitung semua event karena status mekanikal juga bagian dari downtime/delay).
         Mengembalikan total_delay_hours dan list items.
         """
+        if plan_data is None:
+            plan_data = {}
+            
         if not events:
             return {"total_delay_hours": 0.0, "items": []}
         
@@ -49,10 +52,19 @@ class DelayAnalysisService:
             percent = (hours / total_hours) * 100.0 if total_hours > 0 else 0.0
             cumulative_percent += percent
             
+            # Fetch plan_hours from aggregated plan_data dict (case insensitive match)
+            # Find closest match if any, or exact match
+            matched_plan_hours = 0.0
+            for p_name, p_hours in plan_data.items():
+                if p_name.lower() == status.lower():
+                    matched_plan_hours = p_hours
+                    break
+            
             items.append({
                 "status": status,
                 "code": int(code) if code is not None else 0,
                 "hours": round(hours, 2),
+                "plan_hours": round(matched_plan_hours, 2),
                 "percent": round(percent, 2),
                 "cumulative_percent": round(cumulative_percent, 2)
             })
