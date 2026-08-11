@@ -15,9 +15,12 @@
             <th>BD / Delay / Idle (h)</th>
             <th>Top Delay Event</th>
             
-            <!-- Hauling & Production -->
-            <th class="sortable" @click="sortBy('produksi')">Produksi (Ton)<span v-if="sortKey === 'produksi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+          <!-- Hauling & Production -->
+            <th class="sortable" @click="sortBy('hauling')">Hauling (Ton)<span v-if="sortKey === 'hauling'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th class="sortable" @click="sortBy('transit')">Transit (Ton)<span v-if="sortKey === 'transit'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th class="sortable" @click="sortBy('ob')">OB (BCM)<span v-if="sortKey === 'ob'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             <th class="sortable" @click="sortBy('payload')">Avg Payload<span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            
             <th class="sortable" @click="sortBy('ritasi')">Rit/Day<span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             <th>Ld+Qu (Min)</th>
             
@@ -70,10 +73,22 @@
               <span v-else class="text-xs text-gray-400">-</span>
             </td>
 
-            <!-- Production -->
+            <!-- Hauling Production -->
             <td class="font-mono text-sm">
               <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
-              <span v-else>{{ (unitExtraData[unit.unit_code]?.produksi || 0).toFixed(1) }}</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.hauling || 0).toFixed(1) }}</span>
+            </td>
+
+            <!-- Transit Production -->
+            <td class="font-mono text-sm">
+              <span v-if="loadingStates[unit.unit_code]?.transit" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.transit || 0).toFixed(1) }}</span>
+            </td>
+
+            <!-- OB Production -->
+            <td class="font-mono text-sm">
+              <span v-if="loadingStates[unit.unit_code]?.ob" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.ob || 0).toFixed(1) }}</span>
             </td>
             
             <!-- Payload -->
@@ -104,7 +119,7 @@
             </td>
           </tr>
           <tr v-if="!sortedUnits || sortedUnits.length === 0">
-            <td colspan="11" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
+            <td colspan="13" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
           </tr>
         </tbody>
       </table>
@@ -125,7 +140,7 @@ const filterStore = useFilterStore();
 const sortKey = ref('unit_code');
 const sortOrder = ref(1); // 1 for asc, -1 for desc
 
-// Extra data for Production, Payload, Fuel
+// Extra data for Production, Payload, Fuel, Transit, OB
 const unitExtraData = ref({});
 const loadingStates = ref({});
 
@@ -142,13 +157,15 @@ const fetchExtraData = async () => {
   for (const unit of units) {
     const code = unit.unit_code;
     if (!unitExtraData.value[code]) {
-      unitExtraData.value[code] = { produksi: 0, payload: 0, load_time: 0, fuel: 0, ratio: 0 };
+      unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, fuel: 0, ratio: 0 };
     }
     if (!loadingStates.value[code]) {
-      loadingStates.value[code] = { hauling: true, fuel: true };
+      loadingStates.value[code] = { hauling: true, fuel: true, transit: true, ob: true };
     } else {
       loadingStates.value[code].hauling = true;
       loadingStates.value[code].fuel = true;
+      loadingStates.value[code].transit = true;
+      loadingStates.value[code].ob = true;
     }
 
     const unitParams = new URLSearchParams(params);
@@ -156,11 +173,25 @@ const fetchExtraData = async () => {
     
     // Fetch hauling
     apiClient.get(`/hauling/unit?${unitParams.toString()}`).then(res => {
-      unitExtraData.value[code].produksi = res.data?.total_tonage || 0;
+      unitExtraData.value[code].hauling = res.data?.total_tonage || 0;
       unitExtraData.value[code].payload = res.data?.avg_payload || 0;
       unitExtraData.value[code].load_time = res.data?.avg_loading_time || 0;
     }).catch(e => console.error(e)).finally(() => {
       loadingStates.value[code].hauling = false;
+    });
+
+    // Fetch transit
+    apiClient.get(`/transit/unit?${unitParams.toString()}`).then(res => {
+      unitExtraData.value[code].transit = res.data?.total_netto || 0;
+    }).catch(e => console.error(e)).finally(() => {
+      loadingStates.value[code].transit = false;
+    });
+
+    // Fetch OB
+    apiClient.get(`/ob/unit?${unitParams.toString()}`).then(res => {
+      unitExtraData.value[code].ob = res.data?.total_bcm || 0;
+    }).catch(e => console.error(e)).finally(() => {
+      loadingStates.value[code].ob = false;
     });
 
     // Fetch fuel
@@ -196,7 +227,9 @@ const getSortValue = (unit, key) => {
     case 'unit_code': return unit.unit_code || '';
     case 'pa': return unit.pa_percent || 0;
     case 'ua': return unit.ua_percent || 0;
-    case 'produksi': return unitExtraData.value[unit.unit_code]?.produksi || 0;
+    case 'hauling': return unitExtraData.value[unit.unit_code]?.hauling || 0;
+    case 'transit': return unitExtraData.value[unit.unit_code]?.transit || 0;
+    case 'ob': return unitExtraData.value[unit.unit_code]?.ob || 0;
     case 'payload': return unitExtraData.value[unit.unit_code]?.payload || 0;
     case 'ritasi': return unit.total_ritasi || 0;
     case 'fuel': return unitExtraData.value[unit.unit_code]?.fuel || 0;
