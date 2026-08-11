@@ -8,21 +8,22 @@
               Unit
               <span v-if="sortKey === 'unit_code'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
             </th>
+            
+            <!-- Availability & Delay -->
             <th class="sortable" @click="sortBy('pa')">PA (%)<span v-if="sortKey === 'pa'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             <th class="sortable" @click="sortBy('ua')">UA (%)<span v-if="sortKey === 'ua'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            
             <th>BD / Delay / Idle (h)</th>
+            <th>Top Delay Event</th>
             
+            <!-- Hauling & Production -->
             <th class="sortable" @click="sortBy('produksi')">Produksi (Ton)<span v-if="sortKey === 'produksi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             <th class="sortable" @click="sortBy('payload')">Avg Payload<span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            
             <th class="sortable" @click="sortBy('ritasi')">Rit/Day<span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             <th>Ld+Qu (Min)</th>
             
+            <!-- Fuel -->
             <th class="sortable" @click="sortBy('fuel')">Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             <th>KM/L</th>
-            
-            <th>Top Delay Event</th>
           </tr>
         </thead>
         <tbody>
@@ -60,6 +61,15 @@
               <span class="text-purple-500 font-bold" title="Idle">{{ (unit.idle || 0).toFixed(1) }}</span>
             </td>
 
+            <!-- Top Event -->
+            <td>
+              <div v-if="getTopEvent(unit)" class="top-event">
+                <span class="event-name" :title="getTopEvent(unit).status">{{ getTopEvent(unit).status }}</span>
+                <span class="event-hours">{{ getTopEvent(unit).hours.toFixed(1) }}h</span>
+              </div>
+              <span v-else class="text-xs text-gray-400">-</span>
+            </td>
+
             <!-- Production -->
             <td class="font-mono text-sm">
               <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
@@ -91,15 +101,6 @@
             <td class="font-mono text-sm text-green-600">
               <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.ratio || 0).toFixed(2) }}</span>
-            </td>
-
-            <!-- Top Event -->
-            <td>
-              <div v-if="getTopEvent(unit)" class="top-event">
-                <span class="event-name" :title="getTopEvent(unit).status">{{ getTopEvent(unit).status }}</span>
-                <span class="event-hours">{{ getTopEvent(unit).hours.toFixed(1) }}h</span>
-              </div>
-              <span v-else class="text-xs text-gray-400">-</span>
             </td>
           </tr>
           <tr v-if="!sortedUnits || sortedUnits.length === 0">
