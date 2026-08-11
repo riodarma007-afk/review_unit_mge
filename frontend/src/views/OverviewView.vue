@@ -1094,8 +1094,8 @@ const getBadgeColor = (code) => {
 }
 
 .clean-plan-val .target {
-  color: #eab308;
-  font-weight: 600;
+  color: #475569; /* Slate 600 for better readability */
+  font-weight: 700;
 }
 
 .modern-pareto-track {
