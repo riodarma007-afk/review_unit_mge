@@ -15,30 +15,20 @@
               Unit
               <span v-if="sortKey === 'unit_code'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
             </th>
-            <th class="sortable" @click="sortBy('pa')">
-              PA (%)
-              <span v-if="sortKey === 'pa'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
-            </th>
-            <th class="sortable" @click="sortBy('ua')">
-              UA (%)
-              <span v-if="sortKey === 'ua'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
-            </th>
-            <th class="sortable" @click="sortBy('produksi')">
-              Produksi (Ton)
-              <span v-if="sortKey === 'produksi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
-            </th>
-            <th class="sortable" @click="sortBy('payload')">
-              Payload (Ton/Trip)
-              <span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
-            </th>
-            <th class="sortable" @click="sortBy('ritasi')">
-              Ritase (Rit/Day)
-              <span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
-            </th>
-            <th class="sortable" @click="sortBy('fuel')">
-              Fuel (Liter)
-              <span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
-            </th>
+            <th class="sortable" @click="sortBy('pa')">PA (%)<span v-if="sortKey === 'pa'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th class="sortable" @click="sortBy('ua')">UA (%)<span v-if="sortKey === 'ua'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            
+            <th>BD / Delay / Idle (h)</th>
+            
+            <th class="sortable" @click="sortBy('produksi')">Produksi (Ton)<span v-if="sortKey === 'produksi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th class="sortable" @click="sortBy('payload')">Avg Payload<span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            
+            <th class="sortable" @click="sortBy('ritasi')">Rit/Day<span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th>Ld+Qu (Min)</th>
+            
+            <th class="sortable" @click="sortBy('fuel')">Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th>KM/L</th>
+            
             <th>Top Delay Event</th>
           </tr>
         </thead>
@@ -70,6 +60,13 @@
               </div>
             </td>
 
+            <!-- Lost Time -->
+            <td class="text-xs">
+              <span class="text-red-500 font-bold" title="Breakdown">{{ (unit.downtime || 0).toFixed(1) }}</span> / 
+              <span class="text-orange-500 font-bold" title="Delay">{{ (unit.delay || 0).toFixed(1) }}</span> / 
+              <span class="text-purple-500 font-bold" title="Idle">{{ (unit.idle || 0).toFixed(1) }}</span>
+            </td>
+
             <!-- Production -->
             <td class="font-mono text-sm">
               <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
@@ -85,12 +82,24 @@
             <!-- Ritase -->
             <td class="font-mono text-sm">{{ (unit.total_ritasi || 0).toFixed(1) }}</td>
 
+            <!-- Load Queue Time -->
+            <td class="font-mono text-sm text-blue-600">
+              <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.load_time || 0).toFixed(1) }}</span>
+            </td>
+
             <!-- Fuel -->
             <td class="font-mono text-sm">
               <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.fuel || 0).toFixed(1) }}</span>
             </td>
             
+            <!-- KM / L -->
+            <td class="font-mono text-sm text-green-600">
+              <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.ratio || 0).toFixed(2) }}</span>
+            </td>
+
             <!-- Top Event -->
             <td>
               <div v-if="getTopEvent(unit)" class="top-event">
@@ -101,7 +110,7 @@
             </td>
           </tr>
           <tr v-if="!sortedUnits || sortedUnits.length === 0">
-            <td colspan="8" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
+            <td colspan="11" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
           </tr>
         </tbody>
       </table>
@@ -139,7 +148,7 @@ const fetchExtraData = async () => {
   for (const unit of units) {
     const code = unit.unit_code;
     if (!unitExtraData.value[code]) {
-      unitExtraData.value[code] = { produksi: 0, payload: 0, fuel: 0 };
+      unitExtraData.value[code] = { produksi: 0, payload: 0, load_time: 0, fuel: 0, ratio: 0 };
     }
     if (!loadingStates.value[code]) {
       loadingStates.value[code] = { hauling: true, fuel: true };
@@ -149,19 +158,21 @@ const fetchExtraData = async () => {
     }
 
     const unitParams = new URLSearchParams(params);
-    unitParams.append('unit', code);
+    unitParams.append('unit_code', code);
     
     // Fetch hauling
-    apiClient.get(`/hauling/summary?${unitParams.toString()}`).then(res => {
-      unitExtraData.value[code].produksi = res.data?.data?.total_tonase || 0;
-      unitExtraData.value[code].payload = res.data?.data?.avg_payload || 0;
+    apiClient.get(`/hauling/unit?${unitParams.toString()}`).then(res => {
+      unitExtraData.value[code].produksi = res.data?.total_tonage || 0;
+      unitExtraData.value[code].payload = res.data?.avg_payload || 0;
+      unitExtraData.value[code].load_time = res.data?.avg_loading_time || 0;
     }).catch(e => console.error(e)).finally(() => {
       loadingStates.value[code].hauling = false;
     });
 
     // Fetch fuel
-    apiClient.get(`/fuel/summary?${unitParams.toString()}`).then(res => {
-      unitExtraData.value[code].fuel = res.data?.data?.total_liters || 0;
+    apiClient.get(`/fuel/unit?${unitParams.toString()}`).then(res => {
+      unitExtraData.value[code].fuel = res.data?.total_liters || 0;
+      unitExtraData.value[code].ratio = res.data?.average_km_per_liter || 0;
     }).catch(e => console.error(e)).finally(() => {
       loadingStates.value[code].fuel = false;
     });
