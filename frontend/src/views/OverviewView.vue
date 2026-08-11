@@ -551,11 +551,13 @@ const getBadgeColor = (code) => {
                 <div class="modern-pareto-header">
                   <span class="modern-pareto-name">{{ item.status }}</span>
                   <div class="modern-pareto-labels-clean">
+                    <span class="subtle-label">Act:</span>
                     <span class="clean-actual-val" :class="{ 'is-exceeded': item.plan_hours > 0 && item.hours > item.plan_hours }">
                       <SmoothCounter :value="item.hours" :decimals="1"/>h
                     </span>
                     <span v-if="item.plan_hours > 0" class="clean-plan-val">
-                      <span class="divider">/</span>
+                      <span class="divider">|</span>
+                      <span class="subtle-label">Plan:</span>
                       <span class="target">{{ item.plan_hours }}h</span>
                     </span>
                   </div>
@@ -1058,6 +1060,14 @@ const getBadgeColor = (code) => {
   display: flex;
   align-items: baseline;
   gap: 4px;
+}
+
+.subtle-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .clean-actual-val {
