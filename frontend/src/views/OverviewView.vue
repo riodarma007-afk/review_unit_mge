@@ -547,19 +547,31 @@ const getBadgeColor = (code) => {
           <div style="display: flex; flex-direction: column; height: 100%; padding: 1.25rem; grid-column: span 1;">
             
             <div v-if="activeData.events_pareto?.items?.length" class="event-pareto-list" style="flex: 1; padding-top: 1rem;">
-              <div v-for="(item, idx) in activeData.events_pareto.items.slice(0, 10)" :key="idx" class="event-bar-row">
-                <div class="event-bar-header">
-                  <span class="event-name">{{ item.status }}</span>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span class="event-hours" :class="{ 'over-plan': item.plan_hours > 0 && item.hours > item.plan_hours }">
+              <div v-for="(item, idx) in activeData.events_pareto.items.slice(0, 10)" :key="idx" class="modern-pareto-item">
+                <div class="modern-pareto-header">
+                  <span class="modern-pareto-name">{{ item.status }}</span>
+                  <div class="modern-pareto-labels-clean">
+                    <span class="clean-actual-val" :class="{ 'is-exceeded': item.plan_hours > 0 && item.hours > item.plan_hours }">
                       <SmoothCounter :value="item.hours" :decimals="1"/>h
                     </span>
-                    <span v-if="item.plan_hours > 0" class="event-plan-label">/ {{ item.plan_hours }}h</span>
+                    <span v-if="item.plan_hours > 0" class="clean-plan-val">
+                      <span class="divider">/</span>
+                      <span class="target">{{ item.plan_hours }}h</span>
+                    </span>
                   </div>
                 </div>
-                <div class="event-bar-bg">
-                  <div class="event-bar-fill" :class="{ 'over-plan-bar': item.plan_hours > 0 && item.hours > item.plan_hours }" :style="{ width: (item.hours / activeData.events_pareto.items[0].hours * 100) + '%' }"></div>
-                  <div v-if="item.plan_hours > 0" class="event-plan-marker" :style="{ left: Math.min(item.plan_hours / activeData.events_pareto.items[0].hours * 100, 100) + '%' }" :title="'Plan: ' + item.plan_hours + 'h'"></div>
+                <div class="modern-pareto-track">
+                  <!-- Optional: background zone up to plan -->
+                  <div v-if="item.plan_hours > 0" class="modern-target-zone" :style="{ width: Math.min(item.plan_hours / activeData.events_pareto.items[0].hours * 100, 100) + '%' }"></div>
+                  
+                  <div class="modern-pareto-fill" 
+                       :class="{ 'is-exceeded': item.plan_hours > 0 && item.hours > item.plan_hours }" 
+                       :style="{ width: (item.hours / activeData.events_pareto.items[0].hours * 100) + '%' }">
+                  </div>
+                  
+                  <div v-if="item.plan_hours > 0" class="modern-target-marker" :style="{ left: Math.min(item.plan_hours / activeData.events_pareto.items[0].hours * 100, 100) + '%' }">
+                    <div class="marker-line"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -999,17 +1011,16 @@ const getBadgeColor = (code) => {
   font-size: 0.85rem;
   padding: 2rem;
 }
-/* Event Pareto */
+/* Modern Event Pareto */
 .event-pareto-list {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
   overflow-y: auto;
   flex: 1;
-  padding-right: 5px;
+  padding-right: 8px;
 }
 
-/* Custom Scrollbar for Event List */
 .event-pareto-list::-webkit-scrollbar {
   width: 4px;
 }
@@ -1021,64 +1032,111 @@ const getBadgeColor = (code) => {
   border-radius: 4px;
 }
 
-.event-bar-row {
+.modern-pareto-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
-.event-bar-header {
+.modern-pareto-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.event-name {
-  font-size: 0.8rem;
-  font-weight: 500;
+.modern-pareto-name {
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 75%;
+  max-width: 65%;
 }
 
-.event-hours {
-  font-size: 0.75rem;
-  font-weight: 600;
+.modern-pareto-labels-clean {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.clean-actual-val {
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
-.event-bar-bg {
-  height: 6px;
-  background: #f1f3f6;
-  border-radius: 3px;
-  overflow: visible;
-  width: 100%;
+.clean-actual-val.is-exceeded {
+  color: #ef4444;
+}
+
+.clean-plan-val {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.clean-plan-val .divider {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.clean-plan-val .target {
+  color: #eab308;
+  font-weight: 600;
+}
+
+.modern-pareto-track {
   position: relative;
+  height: 8px;
+  background: var(--bg-surface-2, rgba(255, 255, 255, 0.05));
+  border-radius: 4px;
+  width: 100%;
 }
 
-.event-bar-fill {
-  height: 100%;
-  background: #fd8431;
-  border-radius: 3px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.event-bar-fill.over-plan-bar {
-  background: linear-gradient(90deg, #fd8431 60%, #ef4444 100%);
-}
-
-.event-plan-marker {
+.modern-target-zone {
   position: absolute;
-  top: -3px;
-  width: 2px;
-  height: 12px;
-  background: #1e293b;
-  border-radius: 1px;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(234, 179, 8, 0.1);
+  border-radius: 4px 0 0 4px;
+}
+
+.modern-pareto-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 2;
-  opacity: 0.7;
+}
+
+.modern-pareto-fill.is-exceeded {
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.modern-target-marker {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  z-index: 3;
   transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-target-marker .marker-line {
+  height: 100%;
+  width: 2px;
+  background: #facc15;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.8);
 }
 
 .event-plan-label {
