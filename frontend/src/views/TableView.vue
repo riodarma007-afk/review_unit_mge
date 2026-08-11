@@ -65,12 +65,14 @@
             </td>
 
             <!-- Top Event -->
-            <td>
+            <td class="relative interactive-cell" @mouseenter="hoveredDelayUnit = unit.unit_code" @mouseleave="hoveredDelayUnit = null">
               <div v-if="getTopEvent(unit)" class="top-event">
                 <span class="event-name" :title="getTopEvent(unit).status">{{ getTopEvent(unit).status }}</span>
                 <span class="event-hours">{{ getTopEvent(unit).hours.toFixed(1) }}h</span>
               </div>
               <span v-else class="text-xs text-gray-400">-</span>
+              
+              <TopDelayPopup v-if="hoveredDelayUnit === unit.unit_code" :unit-code="unit.unit_code" class="absolute-popup top-delay-pos" />
             </td>
 
             <!-- Hauling Production -->
@@ -107,9 +109,11 @@
             </td>
 
             <!-- Fuel -->
-            <td class="font-mono text-sm">
+            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredFuelUnit = unit.unit_code" @mouseleave="hoveredFuelUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.fuel || 0).toFixed(1) }}</span>
+              
+              <FuelPopup v-if="hoveredFuelUnit === unit.unit_code" :unit-code="unit.unit_code" class="absolute-popup fuel-pos" />
             </td>
             
             <!-- KM / L -->
@@ -133,8 +137,14 @@ import { useKpiStore } from '../stores/kpiStore';
 import { useFilterStore } from '../stores/filterStore';
 import apiClient from '../services/apiClient';
 
+import TopDelayPopup from '@/components/popups/TopDelayPopup.vue';
+import FuelPopup from '@/components/popups/FuelPopup.vue';
+
 const kpiStore = useKpiStore();
 const filterStore = useFilterStore();
+
+const hoveredDelayUnit = ref(null);
+const hoveredFuelUnit = ref(null);
 
 // Sort state
 const sortKey = ref('unit_code');
@@ -400,12 +410,53 @@ const sortedUnits = computed(() => {
   font-weight: 500;
 }
 
-.event-hours {
-  font-size: 0.75rem;
-  color: #ef4444;
-  font-weight: 700;
-  background: #fee2e2;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
+  .event-hours {
+    font-size: 0.75rem;
+    color: #ef4444;
+    font-weight: 700;
+    background: #fee2e2;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  /* Row Hover Effects */
+  .modern-table tbody tr {
+    transition: all 0.2s;
+  }
+  
+  .modern-table tbody tr:hover {
+    background-color: #f8fafc;
+    box-shadow: inset 0 0 0 1px #e2e8f0;
+  }
+  
+  /* Popup Positioning */
+  .relative {
+    position: relative;
+  }
+  
+  .interactive-cell {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .interactive-cell:hover {
+    background-color: #f1f5f9;
+  }
+  
+  .absolute-popup {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 9999;
+  }
+  
+  .top-delay-pos {
+    left: 100%;
+    margin-left: 10px;
+  }
+  
+  .fuel-pos {
+    right: 100%;
+    margin-right: 10px;
+  }
 </style>
