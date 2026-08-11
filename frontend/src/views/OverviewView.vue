@@ -1063,9 +1063,9 @@ const getBadgeColor = (code) => {
 }
 
 .subtle-label {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  opacity: 0.7;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b; /* Slate 500 for better visibility */
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1089,8 +1089,9 @@ const getBadgeColor = (code) => {
 }
 
 .clean-plan-val .divider {
-  color: var(--text-muted);
-  opacity: 0.5;
+  color: #94a3b8; /* Slate 400 */
+  opacity: 1;
+  font-weight: 400;
 }
 
 .clean-plan-val .target {

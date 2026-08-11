@@ -1,0 +1,39 @@
+Nama Event;Sumber Data;Keterangan
+54;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Antri Front;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Change PIT;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Dusty;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Force Majour;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+General Safety Talk;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Hopper Breakdown;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Inspeksi Road;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Jam Tanggung;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Lambat Start;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Moving Equipment;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+No Operator;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+No Time Sheet;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Others;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Prepare Road;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Recall Incident;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Safety Check;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Schedule Maintanance;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Schedule Maintenance;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Standby by Request;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Stretching;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Timbangan Breakdown;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Unschedule Maintenance;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Unshedule Maintanance;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Waiting Evakuasi Incindent;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Waiting Expose;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Waiting Fuel;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Waiting Instruction;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Waiting Loader_Breakdown;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Waiting Loader_No Opr;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Waiting Loader_Refueling;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+Washing;Optrack;Ada di Optrack, TAPI TIDAK ADA di SPO Plan
+In Out CPP;SPO Plan;Ada di SPO Plan, TAPI TIDAK ADA di Optrack
+Prejob Instruction;SPO Plan;Ada di SPO Plan, TAPI TIDAK ADA di Optrack
+Safety Talk General;SPO Plan;Ada di SPO Plan, TAPI TIDAK ADA di Optrack
+Travel Blasting;SPO Plan;Ada di SPO Plan, TAPI TIDAK ADA di Optrack
+Waiting Hopper;SPO Plan;Ada di SPO Plan, TAPI TIDAK ADA di Optrack
+Washing Unit;SPO Plan;Ada di SPO Plan, TAPI TIDAK ADA di Optrack
