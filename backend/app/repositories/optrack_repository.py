@@ -168,7 +168,18 @@ class OptrackRepository:
             queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_coal WHERE {where_clause}")
             
         final_query = " UNION ALL ".join(queries)
-        agg_query = f"SELECT losstime_name, SUM(plan_hours) FROM ({final_query}) as t GROUP BY losstime_name"
+        
+        # We must not sum across pits for the same day if pit is not specified.
+        # Instead, average across pits for each date, then sum those daily averages across the date range.
+        agg_query = f"""
+            SELECT losstime_name, SUM(daily_plan) 
+            FROM (
+                SELECT date, losstime_name, AVG(plan_hours) as daily_plan 
+                FROM ({final_query}) as t1 
+                GROUP BY date, losstime_name
+            ) as t2 
+            GROUP BY losstime_name
+        """
         
         plan_dict = {}
         try:
