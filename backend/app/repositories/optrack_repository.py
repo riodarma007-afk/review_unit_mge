@@ -160,12 +160,12 @@ class OptrackRepository:
         # If activity is explicit, pick the right table. Otherwise, sum both tables.
         # Note: Event mapping already unified the names.
         if activity == 'OB' or activity == 'OB Removal':
-            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_ob WHERE {where_clause}")
+            queries.append(f"SELECT date, losstime_name, plan_hours FROM plan_spo_ob WHERE {where_clause}")
         elif activity == 'Hauling' or activity == 'Coal Hauling':
-            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_coal WHERE {where_clause}")
+            queries.append(f"SELECT date, losstime_name, plan_hours FROM plan_spo_coal WHERE {where_clause}")
         else:
-            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_ob WHERE {where_clause}")
-            queries.append(f"SELECT losstime_name, plan_hours FROM plan_spo_coal WHERE {where_clause}")
+            queries.append(f"SELECT date, losstime_name, plan_hours FROM plan_spo_ob WHERE {where_clause}")
+            queries.append(f"SELECT date, losstime_name, plan_hours FROM plan_spo_coal WHERE {where_clause}")
             
         final_query = " UNION ALL ".join(queries)
         
