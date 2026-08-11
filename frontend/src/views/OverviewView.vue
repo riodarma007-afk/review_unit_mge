@@ -553,7 +553,7 @@ const getBadgeColor = (code) => {
                   <div class="modern-pareto-labels-clean">
                     <span class="subtle-label">Act:</span>
                     <span class="clean-actual-val" :class="{ 'is-exceeded': item.plan_hours > 0 && item.hours > item.plan_hours }">
-                      <SmoothCounter :value="item.hours" :decimals="1"/>h
+                      <SmoothCounter :value="item.hours" :decimals="2"/>h
                     </span>
                     <span v-if="item.plan_hours > 0" class="clean-plan-val">
                       <span class="divider">|</span>
