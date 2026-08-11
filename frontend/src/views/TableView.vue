@@ -49,11 +49,11 @@
             <!-- PA Column with Mini Bar -->
             <td>
               <div class="cell-val-bar">
-                <span :class="unit.pa_target > 0 && unit.pa >= unit.pa_target ? 'text-green-500' : 'text-red-500'">{{ (unit.pa || 0).toFixed(1) }}%</span>
+                <span :class="unit.pa_target > 0 && (unit.pa_percent || 0) >= unit.pa_target ? 'text-green-500' : 'text-red-500'">{{ (unit.pa_percent || 0).toFixed(1) }}%</span>
                 <div class="mini-bar-bg">
                   <div class="mini-bar-fill" 
-                       :class="unit.pa_target > 0 && unit.pa >= unit.pa_target ? 'bg-green-500' : 'bg-red-500'" 
-                       :style="{ width: Math.min((unit.pa || 0), 100) + '%' }"></div>
+                       :class="unit.pa_target > 0 && (unit.pa_percent || 0) >= unit.pa_target ? 'bg-green-500' : 'bg-red-500'" 
+                       :style="{ width: Math.min((unit.pa_percent || 0), 100) + '%' }"></div>
                 </div>
               </div>
             </td>
@@ -61,26 +61,35 @@
             <!-- UA Column with Mini Bar -->
             <td>
               <div class="cell-val-bar">
-                <span :class="unit.ua_target > 0 && unit.ua >= unit.ua_target ? 'text-green-500' : 'text-red-500'">{{ (unit.ua || 0).toFixed(1) }}%</span>
+                <span :class="unit.ua_target > 0 && (unit.ua_percent || 0) >= unit.ua_target ? 'text-green-500' : 'text-red-500'">{{ (unit.ua_percent || 0).toFixed(1) }}%</span>
                 <div class="mini-bar-bg">
                   <div class="mini-bar-fill" 
-                       :class="unit.ua_target > 0 && unit.ua >= unit.ua_target ? 'bg-green-500' : 'bg-red-500'" 
-                       :style="{ width: Math.min((unit.ua || 0), 100) + '%' }"></div>
+                       :class="unit.ua_target > 0 && (unit.ua_percent || 0) >= unit.ua_target ? 'bg-green-500' : 'bg-red-500'" 
+                       :style="{ width: Math.min((unit.ua_percent || 0), 100) + '%' }"></div>
                 </div>
               </div>
             </td>
 
             <!-- Production -->
-            <td class="font-mono text-sm">{{ (unit.production || 0).toFixed(1) }}</td>
+            <td class="font-mono text-sm">
+              <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.produksi || 0).toFixed(1) }}</span>
+            </td>
             
             <!-- Payload -->
-            <td class="font-mono text-sm">{{ (unit.payload || 0).toFixed(1) }}</td>
+            <td class="font-mono text-sm">
+              <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.payload || 0).toFixed(1) }}</span>
+            </td>
             
             <!-- Ritase -->
-            <td class="font-mono text-sm">{{ (unit.ritasi || 0).toFixed(1) }}</td>
+            <td class="font-mono text-sm">{{ (unit.total_ritasi || 0).toFixed(1) }}</td>
 
             <!-- Fuel -->
-            <td class="font-mono text-sm">{{ (unit.fuel_used || 0).toFixed(1) }}</td>
+            <td class="font-mono text-sm">
+              <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.fuel || 0).toFixed(1) }}</span>
+            </td>
             
             <!-- Top Event -->
             <td>
@@ -101,14 +110,73 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useKpiStore } from '../stores/kpiStore';
+import { useFilterStore } from '../stores/filterStore';
+import apiClient from '../services/apiClient';
 
 const kpiStore = useKpiStore();
+const filterStore = useFilterStore();
 
 // Sort state
 const sortKey = ref('unit_code');
 const sortOrder = ref(1); // 1 for asc, -1 for desc
+
+// Extra data for Production, Payload, Fuel
+const unitExtraData = ref({});
+const loadingStates = ref({});
+
+const fetchExtraData = async () => {
+  const units = kpiStore.unitPerformances || [];
+  const filters = filterStore.filters;
+  
+  const params = new URLSearchParams();
+  if (filters.date_from) params.append('date_from', filters.date_from);
+  if (filters.date_to) params.append('date_to', filters.date_to);
+  if (filters.shift) params.append('shift', filters.shift);
+  if (filters.pit) params.append('pit', filters.pit);
+
+  for (const unit of units) {
+    const code = unit.unit_code;
+    if (!unitExtraData.value[code]) {
+      unitExtraData.value[code] = { produksi: 0, payload: 0, fuel: 0 };
+    }
+    if (!loadingStates.value[code]) {
+      loadingStates.value[code] = { hauling: true, fuel: true };
+    } else {
+      loadingStates.value[code].hauling = true;
+      loadingStates.value[code].fuel = true;
+    }
+
+    const unitParams = new URLSearchParams(params);
+    unitParams.append('unit', code);
+    
+    // Fetch hauling
+    apiClient.get(`/hauling/summary?${unitParams.toString()}`).then(res => {
+      unitExtraData.value[code].produksi = res.data?.data?.total_tonase || 0;
+      unitExtraData.value[code].payload = res.data?.data?.avg_payload || 0;
+    }).catch(e => console.error(e)).finally(() => {
+      loadingStates.value[code].hauling = false;
+    });
+
+    // Fetch fuel
+    apiClient.get(`/fuel/summary?${unitParams.toString()}`).then(res => {
+      unitExtraData.value[code].fuel = res.data?.data?.total_liters || 0;
+    }).catch(e => console.error(e)).finally(() => {
+      loadingStates.value[code].fuel = false;
+    });
+  }
+};
+
+watch(() => kpiStore.unitPerformances, () => {
+  fetchExtraData();
+}, { deep: true });
+
+onMounted(() => {
+  if (kpiStore.unitPerformances && kpiStore.unitPerformances.length > 0) {
+    fetchExtraData();
+  }
+});
 
 // Helpers
 const getTopEvent = (unit) => {
@@ -121,12 +189,12 @@ const getTopEvent = (unit) => {
 const getSortValue = (unit, key) => {
   switch (key) {
     case 'unit_code': return unit.unit_code || '';
-    case 'pa': return unit.pa || 0;
-    case 'ua': return unit.ua || 0;
-    case 'produksi': return unit.production || 0;
-    case 'payload': return unit.payload || 0;
-    case 'ritasi': return unit.ritasi || 0;
-    case 'fuel': return unit.fuel_used || 0;
+    case 'pa': return unit.pa_percent || 0;
+    case 'ua': return unit.ua_percent || 0;
+    case 'produksi': return unitExtraData.value[unit.unit_code]?.produksi || 0;
+    case 'payload': return unitExtraData.value[unit.unit_code]?.payload || 0;
+    case 'ritasi': return unit.total_ritasi || 0;
+    case 'fuel': return unitExtraData.value[unit.unit_code]?.fuel || 0;
     default: return 0;
   }
 };
