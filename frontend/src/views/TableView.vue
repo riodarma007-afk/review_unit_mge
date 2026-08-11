@@ -1,12 +1,5 @@
 <template>
   <div class="matrix-container">
-    <div class="matrix-header">
-      <h2 class="matrix-title">Unit Performance Matrix</h2>
-      <div class="matrix-actions">
-        <!-- Optional Actions (Export, etc.) -->
-      </div>
-    </div>
-
     <div class="table-wrapper">
       <table class="modern-table">
         <thead>
@@ -256,7 +249,7 @@ const sortedUnits = computed(() => {
 
 <style scoped>
 .matrix-container {
-  padding: 1.5rem;
+  padding: 0 1.5rem 1.5rem 1.5rem;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -266,26 +259,13 @@ const sortedUnits = computed(() => {
   margin: 1rem;
 }
 
-.matrix-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.matrix-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
 .table-wrapper {
   flex: 1;
   overflow: auto;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: white;
+  margin-top: 1rem;
 }
 
 .modern-table {
