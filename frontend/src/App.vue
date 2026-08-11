@@ -1,8 +1,11 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useKpiStore } from './stores/kpiStore';
 import { useFilterStore } from './stores/filterStore';
 import OverviewView from './views/OverviewView.vue';
+import TableView from './views/TableView.vue';
+
+const currentView = ref('overview');
 
 const assetBase = import.meta.env.BASE_URL;
 const kpiStore = useKpiStore();
@@ -52,11 +55,9 @@ const lastUpdatedText = computed(() => {
         </button>
       </div>
     
-    <div class="nav-tabs" style="display: none;">
-      <button class="nav-tab active">Overview</button>
-      <button class="nav-tab">Units</button>
-      <button class="nav-tab">Analytics</button>
-      <button class="nav-tab">History</button>
+    <div class="nav-tabs" style="display: flex;">
+      <button class="nav-tab" :class="{ active: currentView === 'overview' }" @click="currentView = 'overview'">Overview</button>
+      <button class="nav-tab" :class="{ active: currentView === 'matrix' }" @click="currentView = 'matrix'">Unit Matrix</button>
     </div>
     
     <div class="nav-icons" style="display: flex; align-items: center; gap: 0.75rem;">
@@ -81,7 +82,8 @@ const lastUpdatedText = computed(() => {
   
   <!-- Main Content -->
   <main>
-    <OverviewView />
+    <OverviewView v-if="currentView === 'overview'" />
+    <TableView v-else-if="currentView === 'matrix'" />
   </main>
 </template>
 
