@@ -114,7 +114,6 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 1.1rem;
   color: var(--text-primary);
   flex-shrink: 0;
-  flex: 1;
 }
 
 .nav-logo-icon {
@@ -139,24 +138,24 @@ h1, h2, h3, h4, h5, h6 {
 .nav-tabs {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: var(--bg-main);
-  border-radius: 999px;
-  padding: 4px;
-  gap: 2px;
-  flex-shrink: 0;
+  justify-content: flex-start;
+  background: transparent;
+  padding: 0;
+  gap: 1.5rem;
+  flex: 1;
+  margin-left: 2rem;
 }
 
 .nav-tab {
-  padding: 6px 16px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  padding: 8px 4px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-muted);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.3s ease;
+  position: relative;
   font-family: var(--font);
 }
 
@@ -164,10 +163,26 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-primary);
 }
 
-.nav-tab.active {
+.nav-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
   background: var(--blue-primary);
-  color: white;
-  box-shadow: 0 2px 4px rgba(49, 107, 253, 0.2);
+  transition: width 0.3s ease;
+  border-radius: 3px 3px 0 0;
+}
+
+.nav-tab.active {
+  color: var(--blue-primary);
+  background: transparent;
+  box-shadow: none;
+}
+
+.nav-tab.active::after {
+  width: 100%;
 }
 
 .nav-search {
