@@ -284,7 +284,7 @@ const sortedUnits = computed(() => {
 <style scoped>
 .matrix-container {
   padding: 0 1.5rem 1.5rem 1.5rem;
-  height: 100%;
+  height: calc(100vh - 90px);
   display: flex;
   flex-direction: column;
   background-color: var(--bg-surface);
