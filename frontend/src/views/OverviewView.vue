@@ -1094,7 +1094,7 @@ const getBadgeColor = (code) => {
 }
 
 .clean-plan-val .target {
-  color: #475569; /* Slate 600 for better readability */
+  color: #b45309; /* Dark Amber for distinction from black and yellow */
   font-weight: 700;
 }
 
