@@ -9,6 +9,8 @@
               <span v-if="sortKey === 'unit_code'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
             </th>
             
+            <th>Date</th>
+            
             <!-- Availability & Delay -->
             <th class="sortable" @click="sortBy('pa')">PA (%)<span v-if="sortKey === 'pa'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             <th class="sortable" @click="sortBy('ua')">UA (%)<span v-if="sortKey === 'ua'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
@@ -22,7 +24,6 @@
             <th class="sortable" @click="sortBy('payload')">Avg Payload<span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             
             <th class="sortable" @click="sortBy('ritasi')">Rit/Day<span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th>Loading Time (m)</th>
             
             <!-- Fuel -->
             <th class="sortable" @click="sortBy('fuel')">Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
@@ -32,6 +33,8 @@
         <tbody>
           <tr v-for="unit in sortedUnits" :key="unit.unit_code">
             <td class="sticky-col font-semibold" style="color: var(--text-primary);">{{ unit.unit_code }}</td>
+            
+            <td class="font-mono text-sm text-gray-500 whitespace-nowrap">{{ unit.date || '-' }}</td>
             
             <!-- PA Column with Mini Bar -->
             <td>
@@ -101,12 +104,6 @@
             
             <!-- Ritase -->
             <td class="font-mono text-sm">{{ (unit.total_ritasi || 0).toFixed(1) }}</td>
-
-            <!-- Load Queue Time -->
-            <td class="font-mono text-sm text-blue-600">
-              <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
-              <span v-else>{{ (unitExtraData[unit.unit_code]?.load_time || 0).toFixed(1) }}</span>
-            </td>
 
             <!-- Fuel -->
             <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredFuelUnit = unit.unit_code" @mouseleave="hoveredFuelUnit = null">

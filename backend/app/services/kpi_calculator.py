@@ -317,6 +317,15 @@ class KpiCalculator:
             total_rit = agg['Ritasi']
             kpi['avg_ritasi_per_day'] = round(total_rit / days_count, 1) if days_count > 0 else 0
             
+            if agg['dates']:
+                sorted_dates = sorted(list(agg['dates']))
+                if len(sorted_dates) == 1:
+                    kpi['date'] = sorted_dates[0]
+                else:
+                    kpi['date'] = f"{sorted_dates[0]} to {sorted_dates[-1]}"
+            else:
+                kpi['date'] = "-"
+            
             kpi['activities'] = activity_map.get(unit, [])
             
             # Build events pareto for this unit
