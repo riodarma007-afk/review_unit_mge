@@ -210,23 +210,11 @@ const onUnitChange = (unit) => {
   }
 };
 
-onMounted(async () => {
-  await filterStore.fetchOptions();
-  await kpiStore.fetchDashboardData();
-  // Fetch fuel, hauling, transit, and ob for the first unit after dashboard data loads
-  if (unitPerfs.value.length > 0) {
-    const firstUnit = unitPerfs.value[0].unit_code;
-    kpiStore.setCurrentUnit(firstUnit);
-    kpiStore.fetchFuelForUnit(firstUnit);
-    kpiStore.fetchHaulingForUnit(firstUnit);
-    kpiStore.fetchTransitForUnit(firstUnit);
-    kpiStore.fetchObForUnit(firstUnit);
-  }
-  
-  // Start auto-refresh
-  kpiStore.startAutoRefresh();
-  startCountdown();
-});
+  onMounted(async () => {
+    // Start auto-refresh
+    kpiStore.startAutoRefresh();
+    startCountdown();
+  });
 
 let filterTimeout = null;
 watch(() => filterStore.filters, () => {
