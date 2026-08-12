@@ -31,10 +31,11 @@ def get_unit_ranking(
     date_to: Optional[date] = None,
     shift: Optional[str] = None,
     pit: Optional[str] = None,
+    unit_code: Optional[str] = None,
     activity: Optional[str] = None,
     
 ):
-    filters = _get_filters(date_from, date_to, shift, pit, None, activity)
+    filters = _get_filters(date_from, date_to, shift, pit, unit_code, activity)
     repo = OptrackRepository()
     
     data_utama = repo.get_data_utama(**filters)
@@ -95,9 +96,10 @@ def get_all_unit_performance(
     date_to: Optional[date] = None,
     shift: Optional[str] = None,
     pit: Optional[str] = None,
+    unit_code: Optional[str] = None,
     activity: Optional[str] = None
 ):
-    filters = _get_filters(date_from, date_to, shift, pit, None, activity)
+    filters = _get_filters(date_from, date_to, shift, pit, unit_code, activity)
     repo = OptrackRepository()
     
     data_utama = repo.get_data_utama(**filters)
