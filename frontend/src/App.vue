@@ -4,6 +4,7 @@ import { useKpiStore } from './stores/kpiStore';
 import { useFilterStore } from './stores/filterStore';
 import OverviewView from './views/OverviewView.vue';
 import TableView from './views/TableView.vue';
+import GlobalFilterBar from './components/common/GlobalFilterBar.vue';
 
 const initialView = window.location.hash.replace('#', '') || 'overview';
 const currentView = ref(['overview', 'matrix'].includes(initialView) ? initialView : 'overview');
@@ -109,6 +110,7 @@ const lastUpdatedText = computed(() => {
   </nav>
   
   <!-- Main Content -->
+  <GlobalFilterBar />
   <main>
     <OverviewView v-if="currentView === 'overview'" />
     <TableView v-else-if="currentView === 'matrix'" />
