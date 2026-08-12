@@ -75,10 +75,10 @@ const fetchDelayBreakdown = async () => {
 
     const response = await apiClient.get('/delay/pareto', { params });
     
-    if (response.data && response.data.data) {
-      delayBreakdown.value = response.data.data.map(item => {
-        const reason = item.delay_type || 'Unknown';
-        const act = item.total_hours || 0;
+    if (response.data && response.data.items) {
+      delayBreakdown.value = response.data.items.map(item => {
+        const reason = item.status || 'Unknown';
+        const act = item.hours || 0;
         
         let plan = MOCK_PLANS[reason] !== undefined ? MOCK_PLANS[reason] : (act > 0 ? (act * 0.8).toFixed(2) : null);
         if (plan !== null) plan = parseFloat(plan);
