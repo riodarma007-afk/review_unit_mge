@@ -48,6 +48,7 @@
 </template>
 
 <script setup>
+import { watch } from 'vue';
 import { useFilterStore } from '../../stores/filterStore';
 import { useKpiStore } from '../../stores/kpiStore';
 
@@ -57,6 +58,14 @@ const kpiStore = useKpiStore();
 const handleForceRefresh = () => {
   kpiStore.fetchDashboardData(true);
 };
+
+let filterTimeout = null;
+watch(() => filterStore.filters, () => {
+  if (filterTimeout) clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(() => {
+    kpiStore.fetchDashboardData();
+  }, 300);
+}, { deep: true });
 </script>
 
 <style scoped>

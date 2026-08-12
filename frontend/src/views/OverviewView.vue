@@ -216,14 +216,6 @@ const onUnitChange = (unit) => {
     startCountdown();
   });
 
-let filterTimeout = null;
-watch(() => filterStore.filters, () => {
-  if (filterTimeout) clearTimeout(filterTimeout);
-  filterTimeout = setTimeout(() => {
-    applyFilters();
-  }, 300);
-}, { deep: true });
-
 onUnmounted(() => {
   kpiStore.stopAutoRefresh();
   stopCountdown();
