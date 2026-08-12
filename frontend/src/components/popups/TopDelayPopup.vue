@@ -26,7 +26,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import apiClient from '@/services/apiClient';
+import apiClient from '../../services/apiClient';
 
 const props = defineProps({
   unitCode: {

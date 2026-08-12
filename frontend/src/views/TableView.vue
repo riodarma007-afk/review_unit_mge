@@ -137,8 +137,8 @@ import { useKpiStore } from '../stores/kpiStore';
 import { useFilterStore } from '../stores/filterStore';
 import apiClient from '../services/apiClient';
 
-import TopDelayPopup from '@/components/popups/TopDelayPopup.vue';
-import FuelPopup from '@/components/popups/FuelPopup.vue';
+import TopDelayPopup from '../components/popups/TopDelayPopup.vue';
+import FuelPopup from '../components/popups/FuelPopup.vue';
 
 const kpiStore = useKpiStore();
 const filterStore = useFilterStore();
