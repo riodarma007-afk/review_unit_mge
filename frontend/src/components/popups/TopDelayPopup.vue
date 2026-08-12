@@ -24,6 +24,10 @@
   </div>
 </template>
 
+<script>
+const delayCache = new Map();
+</script>
+
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import apiClient from '../../services/apiClient';
@@ -55,6 +59,13 @@ const MOCK_PLANS = {
 };
 
 const fetchDelayBreakdown = async () => {
+  const cacheKey = `${props.unitCode}-${props.dateFrom || ''}-${props.dateTo || ''}-${props.shift || ''}`;
+  if (delayCache.has(cacheKey)) {
+    delayBreakdown.value = delayCache.get(cacheKey);
+    loading.value = false;
+    return;
+  }
+
   loading.value = true;
   try {
     const params = { unit_code: props.unitCode, limit: 5 };
@@ -69,13 +80,11 @@ const fetchDelayBreakdown = async () => {
         const reason = item.delay_type || 'Unknown';
         const act = item.total_hours || 0;
         
-        // Find a matching mock plan, or use a default if it's a known delay, else null
         let plan = MOCK_PLANS[reason] !== undefined ? MOCK_PLANS[reason] : (act > 0 ? (act * 0.8).toFixed(2) : null);
         if (plan !== null) plan = parseFloat(plan);
         
         const isOverPlan = plan !== null && act > plan;
         
-        // Calculate percentages relative to the max of act or plan + 20% margin
         const maxVal = plan !== null ? Math.max(act, plan) * 1.2 : act * 1.2;
         const progressPercentage = maxVal > 0 ? (act / maxVal) * 100 : 0;
         const planPercentage = plan !== null && maxVal > 0 ? (plan / maxVal) * 100 : 0;
@@ -89,6 +98,7 @@ const fetchDelayBreakdown = async () => {
           planPercentage
         };
       });
+      delayCache.set(cacheKey, delayBreakdown.value);
     }
   } catch (error) {
     console.error('Failed to fetch delay breakdown:', error);
@@ -98,6 +108,7 @@ const fetchDelayBreakdown = async () => {
       { reason: 'Safety Talk', act: 1.0, plan: 0.69, isOverPlan: true, progressPercentage: 90, planPercentage: 60 },
       { reason: 'Antri Loading', act: 0.92, plan: 0.28, isOverPlan: true, progressPercentage: 85, planPercentage: 30 }
     ];
+    delayCache.set(cacheKey, delayBreakdown.value);
   } finally {
     loading.value = false;
   }

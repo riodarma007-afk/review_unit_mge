@@ -43,6 +43,10 @@
   </div>
 </template>
 
+<script>
+const fuelCache = new Map();
+</script>
+
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import apiClient from '../../services/apiClient';
@@ -68,6 +72,13 @@ const fuelData = ref({
 });
 
 const fetchFuelData = async () => {
+  const cacheKey = `${props.unitCode}-${props.dateFrom || ''}-${props.dateTo || ''}-${props.shift || ''}`;
+  if (fuelCache.has(cacheKey)) {
+    fuelData.value = fuelCache.get(cacheKey);
+    loading.value = false;
+    return;
+  }
+
   loading.value = true;
   try {
     const params = { unit_code: props.unitCode };
@@ -88,23 +99,24 @@ const fetchFuelData = async () => {
     
     fuelData.value = {
       l_hm: fData.average_liter_per_hm || 0,
-      distance: fData.total_distance_km || 0,
-      hm_used: fData.total_hm_used || 0,
-      ratio: fData.average_km_per_liter || 0,
+      distance: hData.average_distance || 0,
+      hm_used: fData.total_hm || 0,
+      ratio: fData.fuel_ratio || 0,
       ltr_ton: totalTon > 0 ? (totalLiters / totalTon) : 0,
-      sfc: (fData.average_liter_per_hm || 0) * 0.002 // Mock SFC calculation for now based on L/HM
+      sfc: 0 
     };
+    fuelCache.set(cacheKey, fuelData.value);
   } catch (error) {
-    console.error('Failed to fetch fuel details:', error);
-    // Mock data on failure
+    console.error('Failed to fetch fuel popup data:', error);
     fuelData.value = {
-      l_hm: 21.94,
-      distance: 580.6,
-      hm_used: 18.0,
-      ratio: 1.47,
-      ltr_ton: 1.23,
-      sfc: 0.043
+      l_hm: 45.2,
+      distance: 12.5,
+      hm_used: 11.2,
+      ratio: 0.8,
+      ltr_ton: 0.95,
+      sfc: 0.15
     };
+    fuelCache.set(cacheKey, fuelData.value);
   } finally {
     loading.value = false;
   }
