@@ -43,48 +43,33 @@
 
       <div class="separator"></div>
 
-      <!-- Middle Stats -->
+      <!-- Grid 2x2 -->
       <div class="middle-stats">
-        <div class="stat-block">
-          <div class="stat-label">Distance</div>
+        <div class="stat-block bg-dim">
+          <div class="stat-label text-orange">DISTANCE</div>
           <div class="stat-value">{{ fuelData.distance.toFixed(1) }} <span class="stat-unit">km</span></div>
         </div>
-        <div class="stat-block">
-          <div class="stat-label">Engine Hours</div>
+        <div class="stat-block bg-dim">
+          <div class="stat-label text-green">HM USED</div>
           <div class="stat-value">{{ fuelData.hm_used.toFixed(1) }} <span class="stat-unit">hm</span></div>
         </div>
       </div>
 
-      <!-- Bottom Distribution (Bars) -->
-      <div class="bottom-section">
-        <div class="section-title">Fuel Distribution</div>
-        
-        <!-- Total Consumed -->
-        <div class="bar-row">
-          <div class="bar-label"><span class="dot red"></span> Total Consumed</div>
-          <div class="bar-track"><div class="bar-fill red" :style="{ width: fuelData.total_liters > 0 ? '100%' : '0%' }"></div></div>
-          <div class="bar-value">{{ fuelData.total_liters.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1}) }} L</div>
+      <!-- Grid 3 -->
+      <div class="stats-grid-3">
+        <div class="stat-block bg-dim">
+          <div class="stat-label text-blue">RATIO(KM/L)</div>
+          <div class="stat-value">{{ fuelData.ratio.toFixed(2) }}</div>
         </div>
-        
-        <!-- Mileage -->
-        <div class="bar-row">
-          <div class="bar-label"><span class="dot white"></span> Mileage (KM/L)</div>
-          <div class="bar-track"><div class="bar-fill white" :style="{ width: Math.min(100, (fuelData.ratio / 4) * 100) + '%' }"></div></div>
-          <div class="bar-value">{{ fuelData.ratio.toFixed(2) }}</div>
+        <div class="stat-block bg-dim">
+          <div class="stat-label text-orange">LTR / TON</div>
+          <div class="stat-value">{{ fuelData.ltr_ton.toFixed(2) }}</div>
         </div>
-
-        <!-- Fuel / Ton -->
-        <div class="bar-row">
-          <div class="bar-label"><span class="dot gray"></span> Fuel / Ton</div>
-          <div class="bar-track"><div class="bar-fill gray" :style="{ width: Math.min(100, (fuelData.ltr_ton / 2) * 100) + '%' }"></div></div>
-          <div class="bar-value">{{ fuelData.ltr_ton.toFixed(2) }}</div>
-        </div>
-        
-        <!-- Hauling Netto -->
-        <div class="bar-row">
-          <div class="bar-label"><span class="dot blue"></span> Hauling Netto</div>
-          <div class="bar-track"><div class="bar-fill blue" :style="{ width: fuelData.total_ton > 0 ? '100%' : '0%' }"></div></div>
-          <div class="bar-value">{{ fuelData.total_ton.toFixed(1) }} Ton</div>
+        <div class="stat-block bg-dim" :class="{'bg-sfc-good': fuelData.isGoodSfc, 'bg-sfc-bad': !fuelData.isGoodSfc}">
+          <div class="stat-label" :class="{'text-green': fuelData.isGoodSfc, 'text-red': !fuelData.isGoodSfc}">SFC</div>
+          <div class="stat-value" :class="{'text-bright-green': fuelData.isGoodSfc, 'text-bright-red': !fuelData.isGoodSfc}">
+            {{ fuelData.sfc.toFixed(3) }}
+          </div>
         </div>
       </div>
     </div>
@@ -118,7 +103,9 @@ const fuelData = ref({
   ratio: 0,
   ltr_ton: 0,
   refuel_count: 0,
-  total_ton: 0
+  total_ton: 0,
+  sfc: 0,
+  isGoodSfc: false
 });
 
 const fetchFuelData = async () => {
@@ -141,22 +128,61 @@ const fetchFuelData = async () => {
       apiClient.get('/hauling/unit', { params })
     ]);
     
-    const fData = fuelRes.data || {};
+    let fData = fuelRes.data || {};
     const hData = haulRes.data || {};
     
+    // Fetch lifetime data as fallback if current l_hm is 0 (happens when date range has only 1 refuel)
+    if ((!fData.average_liter_per_hm || fData.average_liter_per_hm === 0) && (props.dateFrom || props.dateTo)) {
+      try {
+        const lifetime = await apiClient.get('/fuel/unit', { params: { unit_code: props.unitCode } });
+        if (lifetime.data && lifetime.data.average_liter_per_hm) {
+          fData.average_liter_per_hm = lifetime.data.average_liter_per_hm;
+          fData.average_km_per_liter = lifetime.data.average_km_per_liter;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    
     const totalLiters = fData.total_liters || 0;
-    const totalTon = hData.total_netto || 0;
+    const totalTon = hData.total_tonage || 0; // Fix: use total_tonage from hauling API
+    const tripCount = hData.trip_count || 0;
+    
+    let distance = fData.total_distance_km || 0;
+    let l_hm = fData.average_liter_per_hm || 0;
+    let hmUsed = fData.total_hm_used || 0;
+    let ratio = fData.average_km_per_liter || 0;
+    
+    // Constants for estimation
+    const isVolvo = props.unitCode.toUpperCase().includes('VOLVO') || props.unitCode.toUpperCase().includes('72') || props.unitCode.toUpperCase().includes('73');
+    const isSany = props.unitCode.toUpperCase().includes('SANY') || props.unitCode.toUpperCase().includes('74');
+    const distancePerTrip = isVolvo ? 28.81 : (isSany ? 27.75 : 28.60);
+    const defaultTon = isVolvo ? 40.27 : (isSany ? 41.08 : 42.40);
+    
+    // Fallback Estimations if 0
+    if (distance === 0 && tripCount > 0) distance = tripCount * distancePerTrip;
+    if (hmUsed === 0 && l_hm > 0) hmUsed = totalLiters / l_hm;
+    if (ratio === 0 && totalLiters > 0) ratio = distance / totalLiters;
+    
+    // SFC Calculation
+    const finalTon = totalTon > 0 ? totalTon : (tripCount * defaultTon);
+    const tonKm = finalTon * distancePerTrip;
+    const sfc = tonKm > 0 ? (totalLiters / tonKm) : 0;
+    const isGoodSfc = sfc > 0 && sfc <= 0.034;
     
     fuelData.value = {
       total_liters: totalLiters,
-      l_hm: fData.average_liter_per_hm || 0,
-      distance: fData.total_distance_km || 0,
-      hm_used: fData.total_hm_used || 0,
-      ratio: fData.average_km_per_liter || 0,
-      ltr_ton: totalTon > 0 ? (totalLiters / totalTon) : 0,
+      l_hm: l_hm,
+      distance: distance,
+      hm_used: hmUsed,
+      ratio: ratio,
+      ltr_ton: finalTon > 0 ? (totalLiters / finalTon) : 0,
       refuel_count: fData.refuel_count || 0,
-      total_ton: totalTon
+      total_ton: finalTon,
+      sfc: sfc,
+      isGoodSfc: isGoodSfc
     };
+    
     fuelCache.set(cacheKey, fuelData.value);
   } catch (error) {
     console.error('Failed to fetch fuel popup data:', error);
@@ -245,17 +271,18 @@ watch(() => props.unitCode, fetchFuelData);
 }
 
 .big-value {
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
+  color: #f59e0b;
 }
 
 .big-unit {
   font-size: 0.85rem;
   color: #8e8e93;
   font-weight: 500;
-  margin-top: 0.25rem;
+  margin-top: 0.35rem;
 }
 
 /* Circular Chart */
@@ -278,7 +305,7 @@ watch(() => props.unitCode, fetchFuelData);
 
 .circle-fill {
   fill: none;
-  stroke: #ff453a;
+  stroke: #f59e0b;
   stroke-width: 3.5;
   stroke-linecap: round;
   animation: progress 1s ease-out forwards;
@@ -293,7 +320,7 @@ watch(() => props.unitCode, fetchFuelData);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #ff453a;
+  color: #f59e0b;
 }
 
 /* Separator */
@@ -303,100 +330,60 @@ watch(() => props.unitCode, fetchFuelData);
   margin: 1rem 0;
 }
 
-/* Middle Stats */
+/* Stats Layout */
 .middle-stats {
-  display: flex;
-  justify-content: flex-start;
-  gap: 3rem;
-  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.stats-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
 }
 
 .stat-block {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
 }
 
+.bg-dim {
+  background-color: #2c2c2e;
+}
+
+.bg-sfc-good { background-color: rgba(48, 209, 88, 0.15); }
+.bg-sfc-bad { background-color: rgba(255, 69, 58, 0.15); }
+
 .stat-label {
-  font-size: 0.75rem;
-  color: #8e8e93;
-  font-weight: 500;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .stat-value {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.stat-unit {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: #a1a1a6;
-}
-
-/* Bottom Section (Distribution) */
-.bottom-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.section-title {
-  font-size: 0.75rem;
-  color: #8e8e93;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.bar-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  gap: 0.75rem;
-}
-
-.bar-label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100px;
-  color: #e5e5ea;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-.dot.red { background-color: #ff453a; }
-.dot.white { background-color: #e5e5ea; }
-.dot.gray { background-color: #636366; }
-.dot.blue { background-color: #0a84ff; }
-
-.bar-track {
-  flex-grow: 1;
-  height: 4px;
-  background-color: #333336;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 1s ease-out;
-}
-.bar-fill.red { background-color: #ff453a; }
-.bar-fill.white { background-color: #e5e5ea; }
-.bar-fill.gray { background-color: #636366; }
-.bar-fill.blue { background-color: #0a84ff; }
-
-.bar-value {
-  width: 55px;
-  text-align: right;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
   color: #ffffff;
 }
 
+.stat-unit {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+/* Colors for labels */
+.text-orange { color: #ff9f0a; }
+.text-green { color: #30d158; }
+.text-blue { color: #0a84ff; }
+.text-red { color: #ff453a; }
+.text-bright-green { color: #30d158; }
+.text-bright-red { color: #ff453a; }
 </style>
