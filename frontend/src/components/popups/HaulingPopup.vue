@@ -3,20 +3,20 @@
     <div v-if="loading" class="popup-loading">
       <div class="spinner"></div>
     </div>
-    <div v-else-if="delayBreakdown.length === 0" class="popup-empty">No delay data available.</div>
+    <div v-else-if="!data" class="popup-empty">No hauling data available.</div>
     
     <div v-else class="card-content">
       <!-- Header -->
       <div class="card-header">
         <div class="header-subtitle">UNIT {{ unitCode }}</div>
-        <div class="pill-btn">{{ delayBreakdown.length }} Events</div>
+        <div class="pill-btn">{{ data.trip_count }} Trips</div>
       </div>
 
-      <!-- Main Section (Total Lost Time + Circle) -->
+      <!-- Main Section -->
       <div class="main-section">
         <div class="value-container">
-          <div class="big-value">{{ totalLostTime.toFixed(2) }}</div>
-          <div class="big-unit">Total Lost Time (h)</div>
+          <div class="big-value">{{ data.avg_ritasi_per_day.toFixed(1) }}</div>
+          <div class="big-unit">Ritasi / Day</div>
         </div>
         
         <div class="circle-chart">
@@ -27,62 +27,67 @@
                 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
             <path class="circle-fill"
-              :stroke-dasharray="overPlanPercent + ', 100'"
+              :stroke-dasharray="payloadPercent + ', 100'"
               d="M18 2.0845
                 a 15.9155 15.9155 0 0 1 0 31.831
                 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
           </svg>
-          <div class="circle-text">{{ overPlanCount }}</div>
+          <div class="circle-text">{{ data.avg_payload.toFixed(0) }}t</div>
         </div>
       </div>
 
-      <!-- Idle, Delay & Downtime Summary (like reference card) -->
+      <!-- Category Summary (Middle Section) -->
       <div class="category-section">
-        <div class="category-title">Idle, Delay & Downtime</div>
-        <div class="category-row" v-for="cat in categories" :key="cat.name">
-          <span class="cat-dot" :style="{ background: cat.color }"></span>
-          <span class="cat-label">{{ cat.name }}</span>
-          <div class="cat-bar-track"><div class="cat-bar-fill" :style="{ background: cat.color, width: cat.barWidth }"></div></div>
-          <span class="cat-value" :style="{ color: cat.color }">{{ cat.value.toFixed(1) }}h</span>
+        <div class="category-title">Production & Time</div>
+        
+        <div class="category-row">
+          <span class="cat-dot" style="background: #f97316"></span>
+          <span class="cat-label">Payload</span>
+          <div class="cat-bar-track"><div class="cat-bar-fill" :style="{ background: '#f97316', width: payloadPercent + '%' }"></div></div>
+          <span class="cat-value" style="color: #f97316">{{ data.avg_payload.toFixed(1) }}</span>
+        </div>
+        
+        <div class="category-row">
+          <span class="cat-dot" style="background: #3b82f6"></span>
+          <span class="cat-label">Load + Queue</span>
+          <div class="cat-bar-track"><div class="cat-bar-fill" :style="{ background: '#3b82f6', width: loadingPercent + '%' }"></div></div>
+          <span class="cat-value" style="color: #3b82f6">{{ data.avg_loading_time.toFixed(1) }}m</span>
         </div>
       </div>
 
-      <!-- Delay Breakdown (bars with plan markers + category tag) -->
+      <!-- Distribution Section (Material Breakdown) -->
       <div class="distribution-section">
-        <div class="distribution-title">Delay Breakdown</div>
+        <div class="distribution-title">Material Breakdown</div>
 
-        <div v-for="(item, index) in delayBreakdown" :key="index" class="delay-item">
+        <div v-for="(count, name) in data.products" :key="name" class="delay-item">
           <div class="delay-header">
-            <span class="delay-reason">{{ item.reason }}</span>
-            <span class="category-tag" :class="'tag-' + item.category">{{ categoryLabel(item.category) }}</span>
+            <span class="delay-reason">{{ name }}</span>
+            <span class="category-tag tag-material">MAT</span>
           </div>
           <div class="delay-meta">
-            <span :class="{'act-red': item.isOverPlan, 'act-blue': !item.isOverPlan}">ACT: {{ item.act.toFixed(2) }}h</span>
-            <span v-if="item.plan !== null" class="plan-text"> | PLAN: {{ item.plan }}h</span>
+            <span class="act-blue">ACT: {{ count }} Trips</span>
           </div>
           <div class="bar-track">
             <div 
-              class="bar-fill" 
-              :class="{'fill-red': item.isOverPlan, 'fill-blue': !item.isOverPlan}"
-              :style="{ width: Math.min(item.progressPercentage, 100) + '%' }"
+              class="bar-fill fill-blue" 
+              :style="{ width: ((count / maxMaterialTrips) * 100) + '%' }"
             ></div>
-            <div v-if="item.plan !== null" class="plan-marker" :style="{ left: item.planPercentage + '%' }"></div>
           </div>
         </div>
+        <div v-if="Object.keys(data.products || {}).length === 0" class="text-muted">No material data</div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-const delayCache = new Map();
+const haulingCache = new Map();
 </script>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import apiClient from '../../services/apiClient';
-import { formatDelayReason } from '../../utils/formatters';
 
 const props = defineProps({
   unitCode: {
@@ -95,113 +100,56 @@ const props = defineProps({
 });
 
 const loading = ref(true);
-const delayBreakdown = ref([]);
-const categoryTotals = ref({ idle: 0, delay: 0, downtime: 0 });
+const data = ref(null);
 
-// Mock plan hours for common delay types
-const MOCK_PLANS = {
-  'Meal & Rest': 1.0,
-  'Safety Talk': 0.25,
-  'Antri Loading': 0.5,
-  'Check Fatigue': 0.5,
-  'Jam Tanggung': null,
-  'P2H': 0.25,
-  'Change Shift': 0.5,
-  'Tunggu Unit': 0.5,
-  'Isi Fuel': 0.25
-};
-
-const categoryLabel = (cat) => {
-  if (cat === 'idle') return 'IDLE';
-  if (cat === 'downtime') return 'BD';
-  return 'DELAY';
-};
-
-const totalLostTime = computed(() => {
-  return categoryTotals.value.idle + categoryTotals.value.delay + categoryTotals.value.downtime;
+const payloadPercent = computed(() => {
+  if (!data.value) return 0;
+  // Assume target payload around 40t
+  return Math.min((data.value.avg_payload / 40) * 100, 100);
 });
 
-const categories = computed(() => {
-  const maxVal = Math.max(categoryTotals.value.idle, categoryTotals.value.delay, categoryTotals.value.downtime, 0.1);
-  return [
-    { name: 'Idle', color: '#8b5cf6', value: categoryTotals.value.idle, barWidth: (categoryTotals.value.idle / maxVal * 100) + '%' },
-    { name: 'Delay', color: '#f59e0b', value: categoryTotals.value.delay, barWidth: (categoryTotals.value.delay / maxVal * 100) + '%' },
-    { name: 'Downtime (BD)', color: '#ef4444', value: categoryTotals.value.downtime, barWidth: (categoryTotals.value.downtime / maxVal * 100) + '%' }
-  ];
+const loadingPercent = computed(() => {
+  if (!data.value) return 0;
+  // Assume target load time around 5 mins
+  return Math.min((data.value.avg_loading_time / 5) * 100, 100);
 });
 
-const overPlanCount = computed(() => {
-  return delayBreakdown.value.filter(item => item.isOverPlan).length;
+const maxMaterialTrips = computed(() => {
+  if (!data.value || !data.value.products) return 1;
+  const counts = Object.values(data.value.products);
+  return counts.length ? Math.max(...counts, 1) : 1;
 });
 
-const overPlanPercent = computed(() => {
-  if (delayBreakdown.value.length === 0) return 0;
-  return Math.round((overPlanCount.value / delayBreakdown.value.length) * 100);
-});
-
-const fetchDelayBreakdown = async () => {
+const fetchHaulingData = async () => {
   const cacheKey = `${props.unitCode}-${props.dateFrom || ''}-${props.dateTo || ''}-${props.shift || ''}`;
-  if (delayCache.has(cacheKey)) {
-    const cached = delayCache.get(cacheKey);
-    delayBreakdown.value = cached.items;
-    categoryTotals.value = cached.totals;
+  if (haulingCache.has(cacheKey)) {
+    data.value = haulingCache.get(cacheKey);
     loading.value = false;
     return;
   }
 
   loading.value = true;
   try {
-    const params = { unit_code: props.unitCode, limit: 8 };
+    const params = { unit_code: props.unitCode };
     if (props.dateFrom) params.date_from = props.dateFrom;
     if (props.dateTo) params.date_to = props.dateTo;
     if (props.shift) params.shift = props.shift;
 
-    const response = await apiClient.get('/delay/pareto', { params });
-    
-    if (response.data && response.data.items) {
-      categoryTotals.value = {
-        idle: response.data.total_idle || 0,
-        delay: response.data.total_delay || 0,
-        downtime: response.data.total_downtime || 0
-      };
-      
-      delayBreakdown.value = response.data.items.map(item => {
-        const rawReason = item.status || 'Unknown';
-        const reason = formatDelayReason(rawReason);
-        const act = item.hours || 0;
-        const category = item.category || 'delay';
-        
-        let plan = MOCK_PLANS[rawReason] !== undefined ? MOCK_PLANS[rawReason] : (act > 0 ? parseFloat((act * 0.8).toFixed(2)) : null);
-        if (plan !== null) plan = parseFloat(plan);
-        
-        const isOverPlan = plan !== null && act > plan;
-        
-        const maxVal = plan !== null ? Math.max(act, plan) * 1.2 : act * 1.2;
-        const progressPercentage = maxVal > 0 ? (act / maxVal) * 100 : 0;
-        const planPercentage = plan !== null && maxVal > 0 ? (plan / maxVal) * 100 : 0;
-
-        return {
-          reason,
-          act,
-          plan,
-          category,
-          isOverPlan,
-          progressPercentage,
-          planPercentage
-        };
-      });
-      delayCache.set(cacheKey, { items: delayBreakdown.value, totals: categoryTotals.value });
+    const response = await apiClient.get('/hauling/unit', { params });
+    if (response.data) {
+      data.value = response.data;
+      haulingCache.set(cacheKey, response.data);
     }
   } catch (error) {
-    console.error('Failed to fetch delay breakdown:', error);
-    delayBreakdown.value = [];
+    console.error('Failed to fetch hauling data:', error);
+    data.value = null;
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(fetchDelayBreakdown);
-watch(() => props.unitCode, fetchDelayBreakdown);
+onMounted(fetchHaulingData);
+watch(() => props.unitCode, fetchHaulingData);
 </script>
 
 <style scoped>
@@ -216,9 +164,6 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   z-index: 1000;
 }
 
-.dark-card::-webkit-scrollbar { width: 4px; }
-.dark-card::-webkit-scrollbar-thumb { background: #48484a; border-radius: 2px; }
-
 .popup-loading, .popup-empty {
   display: flex;
   justify-content: center;
@@ -232,7 +177,7 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   width: 24px;
   height: 24px;
   border: 3px solid #333336;
-  border-top-color: #0a84ff;
+  border-top-color: #f97316;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -320,7 +265,7 @@ watch(() => props.unitCode, fetchDelayBreakdown);
 
 .circle-fill {
   fill: none;
-  stroke: #ff453a;
+  stroke: #f97316;
   stroke-width: 3;
   stroke-linecap: round;
   transition: stroke-dasharray 1s ease-out;
@@ -333,10 +278,10 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   transform: translate(-50%, -50%);
   font-size: 0.85rem;
   font-weight: 700;
-  color: #ff453a;
+  color: #f97316;
 }
 
-/* ── Category Summary (Idle, Delay & Downtime) ── */
+/* ── Category Summary (Middle) ── */
 .category-section {
   margin-bottom: 1.5rem;
   padding-bottom: 1.25rem;
@@ -406,15 +351,11 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   max-height: 150px;
   overflow-y: auto;
   padding-right: 0.5rem;
-  /* Hide scrollbar for standard browsers */
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-/* Hide scrollbar for WebKit browsers */
-.distribution-section::-webkit-scrollbar { 
-  display: none; 
-}
+.distribution-section::-webkit-scrollbar { display: none; }
 
 .distribution-title {
   font-size: 0.82rem;
@@ -423,7 +364,6 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   margin-bottom: 0.1rem;
 }
 
-/* ── Delay Items ── */
 .delay-item {
   display: flex;
   flex-direction: column;
@@ -457,18 +397,15 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   flex-shrink: 0;
 }
 
-.tag-idle { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
-.tag-delay { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-.tag-downtime { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.tag-material { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
 
 .delay-meta {
   font-size: 0.7rem;
   font-weight: 600;
 }
 
-.act-red { color: #ff453a; }
 .act-blue { color: #0a84ff; }
-.plan-text { color: #8e8e93; }
+.text-muted { color: #8e8e93; font-size: 0.75rem; margin-top: 0.5rem; }
 
 /* ── Progress Bar ── */
 .bar-track {
@@ -489,20 +426,5 @@ watch(() => props.unitCode, fetchDelayBreakdown);
 .fill-blue {
   background: #0a84ff;
   box-shadow: 0 1px 4px rgba(10, 132, 255, 0.4);
-}
-
-.fill-red {
-  background: #ff453a;
-  box-shadow: 0 1px 4px rgba(255, 69, 58, 0.4);
-}
-
-.plan-marker {
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  width: 2px;
-  background: #ffd60a;
-  border-radius: 1px;
-  z-index: 2;
 }
 </style>

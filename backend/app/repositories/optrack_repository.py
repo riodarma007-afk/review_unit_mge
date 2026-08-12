@@ -71,7 +71,7 @@ class OptrackRepository:
                 e.Jam_stop AS Stop 
             FROM optrack_breakdown_list e
             INNER JOIN optrack_data_event d ON e.ID_data_input = d.ID_data
-            LEFT JOIN optrack_database_event ev ON e.Event = ev.ID_Event
+            LEFT JOIN optrack_database_event ev ON e.Event = ev.Event
             WHERE {where_clause}
               AND (e.is_deleted = 0 OR e.is_deleted IS NULL)
         """

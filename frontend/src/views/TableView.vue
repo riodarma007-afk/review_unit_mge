@@ -5,29 +5,29 @@
         <thead>
           <tr>
             <th class="sticky-col sortable" @click="sortBy('unit_code')">
-              Unit
+              <div class="th-content"><Truck class="icon" /> Unit</div>
               <span v-if="sortKey === 'unit_code'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
             </th>
             
-            <th>Date</th>
+            <th><div class="th-content"><Calendar class="icon" /> Date</div></th>
             
             <!-- Availability & Delay -->
-            <th class="sortable" @click="sortBy('pa')">PA (%)<span v-if="sortKey === 'pa'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th class="sortable" @click="sortBy('ua')">UA (%)<span v-if="sortKey === 'ua'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th>BD / Delay / Idle (h)</th>
-            <th>Top Delay Event</th>
+            <th class="sortable" @click="sortBy('pa')"><div class="th-content"><Activity class="icon" /> PA (%)<span v-if="sortKey === 'pa'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
+            <th class="sortable" @click="sortBy('ua')"><div class="th-content"><Activity class="icon" /> UA (%)<span v-if="sortKey === 'ua'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
+            <th><div class="th-content"><Clock class="icon" /> Lost Time (h)</div></th>
+            <th><div class="th-content"><AlertTriangle class="icon" /> Top Delay</div></th>
             
           <!-- Hauling & Production -->
-            <th class="sortable" @click="sortBy('hauling')">Hauling (Ton)<span v-if="sortKey === 'hauling'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th class="sortable" @click="sortBy('transit')">Transit (Ton)<span v-if="sortKey === 'transit'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th class="sortable" @click="sortBy('ob')">OB (BCM)<span v-if="sortKey === 'ob'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th class="sortable" @click="sortBy('payload')">Avg Payload<span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th class="sortable" @click="sortBy('hauling')"><div class="th-content"><Box class="icon" /> Hauling (T)<span v-if="sortKey === 'hauling'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
+            <th class="sortable" @click="sortBy('transit')"><div class="th-content"><RefreshCcw class="icon" /> Transit (T)<span v-if="sortKey === 'transit'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
+            <th class="sortable" @click="sortBy('ob')"><div class="th-content"><Mountain class="icon" /> OB (BCM)<span v-if="sortKey === 'ob'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
+            <th class="sortable" @click="sortBy('payload')"><div class="th-content"><Scale class="icon" /> Payload<span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
             
-            <th class="sortable" @click="sortBy('ritasi')">Rit/Day<span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
+            <th class="sortable" @click="sortBy('ritasi')"><div class="th-content"><Target class="icon" /> Rit/Day<span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
             
             <!-- Fuel -->
-            <th class="sortable" @click="sortBy('fuel')">Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th>KM/L</th>
+            <th class="sortable" @click="sortBy('fuel')"><div class="th-content"><Fuel class="icon" /> Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
+            <th><div class="th-content"><Zap class="icon" /> KM/L</div></th>
           </tr>
         </thead>
         <tbody>
@@ -62,16 +62,17 @@
 
             <!-- Lost Time -->
             <td class="text-xs">
-              <span class="text-red-500 font-bold" title="Breakdown">{{ (unit.downtime || 0).toFixed(1) }}</span> / 
-              <span class="text-orange-500 font-bold" title="Delay">{{ (unit.delay || 0).toFixed(1) }}</span> / 
-              <span class="text-purple-500 font-bold" title="Idle">{{ (unit.idle || 0).toFixed(1) }}</span>
+              <span v-if="unit.downtime > 0" class="badge badge-red" title="Breakdown">{{ (unit.downtime || 0).toFixed(1) }} BD</span>
+              <span v-if="unit.delay > 0" class="badge badge-orange" title="Delay">{{ (unit.delay || 0).toFixed(1) }} DLY</span>
+              <span v-if="unit.idle > 0" class="badge badge-purple" title="Idle">{{ (unit.idle || 0).toFixed(1) }} IDL</span>
+              <span v-if="!unit.downtime && !unit.delay && !unit.idle" class="text-gray-400">-</span>
             </td>
 
             <!-- Top Event -->
             <td class="relative interactive-cell" @mouseenter="hoveredDelayUnit = unit.unit_code" @mouseleave="hoveredDelayUnit = null">
-                <div v-if="getTopEvent(unit)" class="top-event">
+                <div v-if="getTopEvent(unit)" class="status-pill">
+                  <span class="status-dot"></span>
                   <span class="event-name" :title="getTopEvent(unit).status">{{ formatDelayReason(getTopEvent(unit).status) }}</span>
-                  <span class="event-hours">{{ getTopEvent(unit).hours.toFixed(1) }}h</span>
                 </div>
               <span v-else class="text-xs text-gray-400">-</span>
               
@@ -79,21 +80,27 @@
             </td>
 
             <!-- Hauling Production -->
-            <td class="font-mono text-sm">
+            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredHaulingUnit = unit.unit_code" @mouseleave="hoveredHaulingUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.hauling || 0).toFixed(1) }}</span>
+              
+              <HaulingPopup v-if="hoveredHaulingUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
             </td>
 
             <!-- Transit Production -->
-            <td class="font-mono text-sm">
+            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredTransitUnit = unit.unit_code" @mouseleave="hoveredTransitUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.transit" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.transit || 0).toFixed(1) }}</span>
+              
+              <TransitPopup v-if="hoveredTransitUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
             </td>
 
             <!-- OB Production -->
-            <td class="font-mono text-sm">
+            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredObUnit = unit.unit_code" @mouseleave="hoveredObUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.ob" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.ob || 0).toFixed(1) }}</span>
+              
+              <ObPopup v-if="hoveredObUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
             </td>
             
             <!-- Payload -->
@@ -130,12 +137,16 @@
 
 <script setup>
 import { computed, ref, watch, onMounted } from 'vue';
+import { Truck, Calendar, Activity, Clock, AlertTriangle, Box, RefreshCcw, Mountain, Scale, Target, Fuel, Zap } from 'lucide-vue-next';
 import { useKpiStore } from '../stores/kpiStore';
 import { useFilterStore } from '../stores/filterStore';
 import apiClient from '../services/apiClient';
 
 import TopDelayPopup from '../components/popups/TopDelayPopup.vue';
 import FuelPopup from '../components/popups/FuelPopup.vue';
+import HaulingPopup from '../components/popups/HaulingPopup.vue';
+import TransitPopup from '../components/popups/TransitPopup.vue';
+import ObPopup from '../components/popups/ObPopup.vue';
 import { formatDelayReason } from '../utils/formatters';
 
 const kpiStore = useKpiStore();
@@ -143,6 +154,9 @@ const filterStore = useFilterStore();
 
 const hoveredDelayUnit = ref(null);
 const hoveredFuelUnit = ref(null);
+const hoveredHaulingUnit = ref(null);
+const hoveredTransitUnit = ref(null);
+const hoveredObUnit = ref(null);
 
 // Sort state
 const sortKey = ref('unit_code');
@@ -319,10 +333,11 @@ const sortedUnits = computed(() => {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  margin-bottom: 12rem; /* Add space so last rows can scroll up, avoiding popup cutoff */
 }
 
 .modern-table th, .modern-table td {
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border);
   font-size: 0.85rem;
   white-space: nowrap;
@@ -354,6 +369,19 @@ const sortedUnits = computed(() => {
   color: #94a3b8;
 }
 
+.th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
 .sticky-col {
   position: sticky;
   left: 0;
@@ -367,12 +395,49 @@ const sortedUnits = computed(() => {
   background: #f8fafc;
 }
 
+.modern-table tbody tr {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
 .modern-table tbody tr:hover {
-  background: #f8fafc;
+  background-color: #f4f7fe !important;
 }
 
 .modern-table tbody tr:hover .sticky-col {
-  background: #f8fafc;
+  background-color: #f4f7fe !important;
+  box-shadow: inset 4px 0 0 0 #4338ca;
+}
+
+/* Badges & Pills */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 4px;
+}
+.badge-red { background: #fee2e2; color: #ef4444; }
+.badge-orange { background: #fef3c7; color: #f59e0b; }
+.badge-purple { background: #f3e8ff; color: #8b5cf6; }
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #e0e7ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4338ca;
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4338ca;
 }
 
 /* Micro-Charts */
@@ -422,15 +487,7 @@ const sortedUnits = computed(() => {
     border-radius: 4px;
   }
   
-  /* Row Hover Effects */
-  .modern-table tbody tr {
-    transition: all 0.2s;
-  }
-  
-  .modern-table tbody tr:hover {
-    background-color: #f8fafc;
-    box-shadow: inset 0 0 0 1px #e2e8f0;
-  }
+  /* Removed redundant row hover effects since they were added above */
   
   /* Popup Positioning */
   .relative {
