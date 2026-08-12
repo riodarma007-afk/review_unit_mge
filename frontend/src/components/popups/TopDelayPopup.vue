@@ -32,7 +32,10 @@ const props = defineProps({
   unitCode: {
     type: String,
     required: true
-  }
+  },
+  dateFrom: String,
+  dateTo: String,
+  shift: String
 });
 
 const loading = ref(true);
@@ -54,9 +57,12 @@ const MOCK_PLANS = {
 const fetchDelayBreakdown = async () => {
   loading.value = true;
   try {
-    const response = await apiClient.get('/events/pareto', {
-      params: { unit_code: props.unitCode, limit: 5 }
-    });
+    const params = { unit_code: props.unitCode, limit: 5 };
+    if (props.dateFrom) params.date_from = props.dateFrom;
+    if (props.dateTo) params.date_to = props.dateTo;
+    if (props.shift) params.shift = props.shift;
+
+    const response = await apiClient.get('/delay/pareto', { params });
     
     if (response.data && response.data.data) {
       delayBreakdown.value = response.data.data.map(item => {
