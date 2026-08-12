@@ -1,23 +1,75 @@
 <template>
-  <div class="delay-popup">
-    <div v-if="loading" class="popup-loading">Loading breakdown...</div>
+  <div class="dark-card animate-in fade-in zoom-in duration-200">
+    <div v-if="loading" class="popup-loading">
+      <div class="spinner"></div>
+    </div>
     <div v-else-if="delayBreakdown.length === 0" class="popup-empty">No delay data available.</div>
-    <div v-else class="delay-list">
-      <div v-for="(item, index) in delayBreakdown" :key="index" class="delay-item">
-        <div class="delay-header">
-          <span class="delay-reason">{{ item.reason }}</span>
-          <span class="delay-metrics">
-            <span :class="{'text-red': item.isOverPlan}">ACT: {{ item.act.toFixed(2) }}h</span>
-            <span v-if="item.plan"> | PLAN: {{ item.plan }}h</span>
-          </span>
+    
+    <div v-else class="card-content">
+      <!-- Header -->
+      <div class="card-header">
+        <div class="header-subtitle">UNIT {{ unitCode }}</div>
+        <div class="pill-btn">{{ delayBreakdown.length }} Events</div>
+      </div>
+
+      <!-- Main Section (Total Delay + Circle) -->
+      <div class="main-section">
+        <div class="value-container">
+          <div class="big-value">{{ totalDelay.toFixed(2) }}</div>
+          <div class="big-unit">Total Delay (h)</div>
         </div>
-        <div class="progress-bar-bg">
-          <div 
-            class="progress-bar-fill" 
-            :class="{'bg-red': item.isOverPlan, 'bg-blue': !item.isOverPlan}"
-            :style="{ width: Math.min(item.progressPercentage, 100) + '%' }"
-          ></div>
-          <div v-if="item.plan" class="plan-marker" :style="{ left: item.planPercentage + '%' }"></div>
+        
+        <!-- Circle Ring showing over-plan percentage -->
+        <div class="circle-chart">
+          <svg viewBox="0 0 36 36" class="circular-svg">
+            <path class="circle-bg"
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+            <path class="circle-fill"
+              :stroke-dasharray="overPlanPercent + ', 100'"
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+          </svg>
+          <div class="circle-text">{{ overPlanCount }}</div>
+        </div>
+      </div>
+
+      <!-- Middle Stats (plain text) -->
+      <div class="middle-stats">
+        <div class="stat-col">
+          <div class="stat-label">Over Plan</div>
+          <div class="stat-value">{{ overPlanCount }} <span class="stat-unit">items</span></div>
+        </div>
+        <div class="stat-col">
+          <div class="stat-label">On Target</div>
+          <div class="stat-value">{{ onTargetCount }} <span class="stat-unit">items</span></div>
+        </div>
+      </div>
+
+      <!-- Delay Breakdown (bars with plan markers) -->
+      <div class="distribution-section">
+        <div class="distribution-title">Delay Breakdown</div>
+
+        <div v-for="(item, index) in delayBreakdown" :key="index" class="delay-item">
+          <div class="delay-header">
+            <span class="delay-reason">{{ item.reason }}</span>
+            <span class="delay-metrics">
+              <span :class="{'act-red': item.isOverPlan, 'act-blue': !item.isOverPlan}">ACT: {{ item.act.toFixed(2) }}h</span>
+              <span v-if="item.plan !== null" class="plan-text"> | PLAN: {{ item.plan }}h</span>
+            </span>
+          </div>
+          <div class="bar-track">
+            <div 
+              class="bar-fill" 
+              :class="{'fill-red': item.isOverPlan, 'fill-blue': !item.isOverPlan}"
+              :style="{ width: Math.min(item.progressPercentage, 100) + '%' }"
+            ></div>
+            <div v-if="item.plan !== null" class="plan-marker" :style="{ left: item.planPercentage + '%' }"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -29,7 +81,7 @@ const delayCache = new Map();
 </script>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import apiClient from '../../services/apiClient';
 import { formatDelayReason } from '../../utils/formatters';
 
@@ -52,12 +104,29 @@ const MOCK_PLANS = {
   'Safety Talk': 0.25,
   'Antri Loading': 0.5,
   'Check Fatigue': 0.5,
-  'Jam Tanggung': null, // No plan
+  'Jam Tanggung': null,
   'P2H': 0.25,
   'Change Shift': 0.5,
   'Tunggu Unit': 0.5,
   'Isi Fuel': 0.25
 };
+
+const totalDelay = computed(() => {
+  return delayBreakdown.value.reduce((sum, item) => sum + item.act, 0);
+});
+
+const overPlanCount = computed(() => {
+  return delayBreakdown.value.filter(item => item.isOverPlan).length;
+});
+
+const onTargetCount = computed(() => {
+  return delayBreakdown.value.filter(item => !item.isOverPlan).length;
+});
+
+const overPlanPercent = computed(() => {
+  if (delayBreakdown.value.length === 0) return 0;
+  return Math.round((overPlanCount.value / delayBreakdown.value.length) * 100);
+});
 
 const fetchDelayBreakdown = async () => {
   const cacheKey = `${props.unitCode}-${props.dateFrom || ''}-${props.dateTo || ''}-${props.shift || ''}`;
@@ -82,7 +151,7 @@ const fetchDelayBreakdown = async () => {
         const reason = formatDelayReason(rawReason);
         const act = item.hours || 0;
         
-        let plan = MOCK_PLANS[rawReason] !== undefined ? MOCK_PLANS[rawReason] : (act > 0 ? (act * 0.8).toFixed(2) : null);
+        let plan = MOCK_PLANS[rawReason] !== undefined ? MOCK_PLANS[rawReason] : (act > 0 ? parseFloat((act * 0.8).toFixed(2)) : null);
         if (plan !== null) plan = parseFloat(plan);
         
         const isOverPlan = plan !== null && act > plan;
@@ -104,7 +173,6 @@ const fetchDelayBreakdown = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch delay breakdown:', error);
-    // Add mock data if API fails completely to ensure UI is visible
     delayBreakdown.value = [
       { reason: 'Meal & Rest', act: 1.0, plan: 1.0, isOverPlan: false, progressPercentage: 80, planPercentage: 80 },
       { reason: 'Safety Talk', act: 1.0, plan: 0.69, isOverPlan: true, progressPercentage: 90, planPercentage: 60 },
@@ -121,29 +189,180 @@ watch(() => props.unitCode, fetchDelayBreakdown);
 </script>
 
 <style scoped>
-.delay-popup {
-  width: 320px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  padding: 1.25rem;
-  font-family: var(--font, 'Inter', sans-serif);
+.dark-card {
+  width: 340px;
+  background-color: #1c1c1e;
+  border-radius: 24px;
+  padding: 1.75rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #ffffff;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
   z-index: 1000;
 }
 
 .popup-loading, .popup-empty {
-  color: #64748b;
-  font-size: 0.9rem;
-  text-align: center;
-  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+  color: #8e8e93;
+  font-size: 0.85rem;
 }
 
-.delay-list {
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #333336;
+  border-top-color: #0a84ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.card-content {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
 }
 
+/* ── Header ── */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.75rem;
+}
+
+.header-subtitle {
+  font-size: 0.85rem;
+  color: #8e8e93;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.pill-btn {
+  background-color: #2c2c2e;
+  color: #e5e5ea;
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #3a3a3c;
+}
+
+/* ── Main Section ── */
+.main-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.value-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.big-value {
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #e5e5ea;
+}
+
+.big-unit {
+  font-size: 0.85rem;
+  color: #636366;
+  font-weight: 500;
+  margin-top: 0.4rem;
+}
+
+/* ── Circle Ring ── */
+.circle-chart {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.circular-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.circle-bg {
+  fill: none;
+  stroke: #333336;
+  stroke-width: 3;
+}
+
+.circle-fill {
+  fill: none;
+  stroke: #ff453a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1s ease-out;
+}
+
+.circle-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ff453a;
+}
+
+/* ── Middle Stats (plain text) ── */
+.middle-stats {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 1.75rem;
+}
+
+.stat-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: #8e8e93;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stat-unit {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+/* ── Distribution Section ── */
+.distribution-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.distribution-title {
+  font-size: 0.82rem;
+  color: #8e8e93;
+  font-weight: 500;
+  margin-bottom: 0.15rem;
+}
+
+/* ── Delay Items ── */
 .delay-item {
   display: flex;
   flex-direction: column;
@@ -158,9 +377,9 @@ watch(() => props.unitCode, fetchDelayBreakdown);
 }
 
 .delay-reason {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #e5e5ea;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -168,39 +387,40 @@ watch(() => props.unitCode, fetchDelayBreakdown);
 }
 
 .delay-metrics {
-  font-size: 0.75rem;
-  color: #64748b;
+  font-size: 0.7rem;
+  color: #8e8e93;
   font-weight: 600;
   flex-shrink: 0;
 }
 
-.text-red {
-  color: #ef4444;
-}
+.act-red { color: #ff453a; }
+.act-blue { color: #0a84ff; }
+.plan-text { color: #8e8e93; }
 
-.progress-bar-bg {
+/* ── Progress Bar ── */
+.bar-track {
   width: 100%;
-  height: 8px;
-  background: #f1f5f9;
-  border-radius: 999px;
+  height: 6px;
+  background-color: #2c2c2e;
+  border-radius: 3px;
   position: relative;
   overflow: visible;
 }
 
-.progress-bar-fill {
+.bar-fill {
   height: 100%;
-  border-radius: 999px;
-  transition: width 0.3s ease;
+  border-radius: 3px;
+  transition: width 0.6s ease-out;
 }
 
-.bg-blue {
-  background: #3b82f6;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+.fill-blue {
+  background: #0a84ff;
+  box-shadow: 0 1px 4px rgba(10, 132, 255, 0.4);
 }
 
-.bg-red {
-  background: #ef4444;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+.fill-red {
+  background: #ff453a;
+  box-shadow: 0 1px 4px rgba(255, 69, 58, 0.4);
 }
 
 .plan-marker {
@@ -208,7 +428,8 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   top: -4px;
   bottom: -4px;
   width: 2px;
-  background: #fbbf24;
+  background: #ffd60a;
+  border-radius: 1px;
   z-index: 2;
 }
 </style>
