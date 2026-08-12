@@ -152,18 +152,24 @@ watch(() => props.unitCode, fetchDelayBreakdown);
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 0.5rem;
 }
 
 .delay-reason {
   font-size: 0.9rem;
   font-weight: 600;
   color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .delay-metrics {
   font-size: 0.75rem;
   color: #64748b;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .text-red {
