@@ -1,11 +1,25 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useKpiStore } from './stores/kpiStore';
 import { useFilterStore } from './stores/filterStore';
 import OverviewView from './views/OverviewView.vue';
 import TableView from './views/TableView.vue';
 
-const currentView = ref('overview');
+const initialView = window.location.hash.replace('#', '') || 'overview';
+const currentView = ref(['overview', 'matrix'].includes(initialView) ? initialView : 'overview');
+
+watch(currentView, (newView) => {
+  window.location.hash = newView;
+});
+
+onMounted(() => {
+  window.addEventListener('hashchange', () => {
+    const hashView = window.location.hash.replace('#', '');
+    if (['overview', 'matrix'].includes(hashView)) {
+      currentView.value = hashView;
+    }
+  });
+});
 
 const assetBase = import.meta.env.BASE_URL;
 const kpiStore = useKpiStore();
