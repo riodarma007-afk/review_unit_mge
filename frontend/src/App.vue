@@ -12,13 +12,27 @@ watch(currentView, (newView) => {
   window.location.hash = newView;
 });
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('hashchange', () => {
     const hashView = window.location.hash.replace('#', '');
     if (['overview', 'matrix'].includes(hashView)) {
       currentView.value = hashView;
     }
   });
+
+  // Fetch initial data once on app load
+  await filterStore.fetchOptions();
+  await kpiStore.fetchDashboardData();
+  
+  // Initialize first unit's specific data if available
+  if (kpiStore.unitPerformances && kpiStore.unitPerformances.length > 0) {
+    const firstUnit = kpiStore.unitPerformances[0].unit_code;
+    kpiStore.setCurrentUnit(firstUnit);
+    kpiStore.fetchFuelForUnit(firstUnit);
+    kpiStore.fetchHaulingForUnit(firstUnit);
+    kpiStore.fetchTransitForUnit(firstUnit);
+    kpiStore.fetchObForUnit(firstUnit);
+  }
 });
 
 const assetBase = import.meta.env.BASE_URL;
