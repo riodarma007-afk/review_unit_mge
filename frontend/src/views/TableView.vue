@@ -22,7 +22,7 @@
             <th class="sortable" @click="sortBy('payload')">Avg Payload<span v-if="sortKey === 'payload'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
             
             <th class="sortable" @click="sortBy('ritasi')">Rit/Day<span v-if="sortKey === 'ritasi'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
-            <th>Ld+Qu (Min)</th>
+            <th>Loading Time (m)</th>
             
             <!-- Fuel -->
             <th class="sortable" @click="sortBy('fuel')">Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></th>
