@@ -18,7 +18,7 @@
           <div class="big-unit">L/HM</div>
         </div>
         
-        <!-- Decorative Circle Chart -->
+        <!-- Circular Progress Ring -->
         <div class="circle-chart">
           <svg viewBox="0 0 36 36" class="circular-svg">
             <path class="circle-bg"
@@ -27,49 +27,51 @@
                 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
             <path class="circle-fill"
-              stroke-dasharray="75, 100"
+              :stroke-dasharray="circlePercent + ', 100'"
               d="M18 2.0845
                 a 15.9155 15.9155 0 0 1 0 31.831
                 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
           </svg>
-          <div class="circle-icon">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-            </svg>
-          </div>
+          <div class="circle-text">{{ circlePercent }}%</div>
         </div>
       </div>
 
-      <div class="separator"></div>
-
-      <!-- Grid 2x2 -->
+      <!-- Middle Stats (plain text, no boxes) -->
       <div class="middle-stats">
-        <div class="stat-block bg-dim">
-          <div class="stat-label text-orange">DISTANCE</div>
+        <div class="stat-col">
+          <div class="stat-label">Distance</div>
           <div class="stat-value">{{ fuelData.distance.toFixed(1) }} <span class="stat-unit">km</span></div>
         </div>
-        <div class="stat-block bg-dim">
-          <div class="stat-label text-green">HM USED</div>
+        <div class="stat-col">
+          <div class="stat-label">HM Used</div>
           <div class="stat-value">{{ fuelData.hm_used.toFixed(1) }} <span class="stat-unit">hm</span></div>
         </div>
       </div>
 
-      <!-- Grid 3 -->
-      <div class="stats-grid-3">
-        <div class="stat-block bg-dim">
-          <div class="stat-label text-blue">RATIO(KM/L)</div>
-          <div class="stat-value">{{ fuelData.ratio.toFixed(2) }}</div>
+      <!-- Fuel Analysis (horizontal bars like Expense Distribution) -->
+      <div class="distribution-section">
+        <div class="distribution-title">Fuel Analysis</div>
+
+        <div class="bar-row">
+          <span class="dot" style="background:#0a84ff"></span>
+          <span class="bar-label">Ratio (KM/L)</span>
+          <div class="bar-track"><div class="bar-fill" style="background:#0a84ff" :style="{ width: ratioBarWidth }"></div></div>
+          <span class="bar-value">{{ fuelData.ratio.toFixed(2) }}</span>
         </div>
-        <div class="stat-block bg-dim">
-          <div class="stat-label text-orange">LTR / TON</div>
-          <div class="stat-value">{{ fuelData.ltr_ton.toFixed(2) }}</div>
+
+        <div class="bar-row">
+          <span class="dot" style="background:#ff9f0a"></span>
+          <span class="bar-label">LTR / TON</span>
+          <div class="bar-track"><div class="bar-fill" style="background:#ff9f0a" :style="{ width: ltrTonBarWidth }"></div></div>
+          <span class="bar-value">{{ fuelData.ltr_ton.toFixed(2) }}</span>
         </div>
-        <div class="stat-block bg-dim" :class="{'bg-sfc-good': fuelData.isGoodSfc, 'bg-sfc-bad': !fuelData.isGoodSfc}">
-          <div class="stat-label" :class="{'text-green': fuelData.isGoodSfc, 'text-red': !fuelData.isGoodSfc}">SFC</div>
-          <div class="stat-value" :class="{'text-bright-green': fuelData.isGoodSfc, 'text-bright-red': !fuelData.isGoodSfc}">
-            {{ fuelData.sfc.toFixed(3) }}
-          </div>
+
+        <div class="bar-row">
+          <span class="dot" :style="{ background: fuelData.isGoodSfc ? '#30d158' : '#ff453a' }"></span>
+          <span class="bar-label">SFC</span>
+          <div class="bar-track"><div class="bar-fill" :style="{ background: fuelData.isGoodSfc ? '#30d158' : '#ff453a', width: sfcBarWidth }"></div></div>
+          <span class="bar-value" :style="{ color: fuelData.isGoodSfc ? '#30d158' : '#ff453a' }">{{ fuelData.sfc.toFixed(3) }}</span>
         </div>
       </div>
     </div>
@@ -81,7 +83,7 @@ const fuelCache = new Map();
 </script>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import apiClient from '../../services/apiClient';
 
 const props = defineProps({
@@ -106,6 +108,31 @@ const fuelData = ref({
   total_ton: 0,
   sfc: 0,
   isGoodSfc: false
+});
+
+// Circle percent: efficiency score based on L/HM target (~14 ideal, >25 bad)
+const circlePercent = computed(() => {
+  const lhm = fuelData.value.l_hm;
+  if (lhm <= 0) return 0;
+  // Lower L/HM = better efficiency. Target ~14, max ~30
+  const score = Math.max(0, Math.min(100, Math.round((1 - (lhm - 10) / 25) * 100)));
+  return Math.max(0, Math.min(99, score));
+});
+
+// Bar widths: scale proportionally
+const ratioBarWidth = computed(() => {
+  // KM/L typically 0.5 - 3.0, scale to 3 max
+  return Math.min(100, (fuelData.value.ratio / 3) * 100) + '%';
+});
+
+const ltrTonBarWidth = computed(() => {
+  // LTR/TON typically 0.3 - 2.5, scale to 2.5 max
+  return Math.min(100, (fuelData.value.ltr_ton / 2.5) * 100) + '%';
+});
+
+const sfcBarWidth = computed(() => {
+  // SFC typically 0.02 - 0.06, scale to 0.06 max
+  return Math.min(100, (fuelData.value.sfc / 0.06) * 100) + '%';
 });
 
 const fetchFuelData = async () => {
@@ -178,7 +205,7 @@ const fetchFuelData = async () => {
       hmUsed = totalLiters / l_hm;
     }
     
-    // Fallback 4: Estimate Tonnage if 0 (e.g., OB Unit or Missing API)
+    // Fallback 4: Estimate Tonnage if 0
     if (tripCount === 0 && distance > 0) {
       tripCount = Math.round(distance / distancePerTrip);
     }
@@ -188,9 +215,8 @@ const fetchFuelData = async () => {
     const tonKm = finalTon * distancePerTrip;
     let sfc = tonKm > 0 ? (totalLiters / tonKm) : 0;
     
-    // If SFC is absurdly high or 0 due to estimate flaws, fallback to a sensible default based on L/HM
     if (sfc === 0 && totalLiters > 0) {
-       sfc = 0.033; // industry target
+       sfc = 0.033;
     }
     
     const isGoodSfc = sfc > 0 && sfc <= 0.034;
@@ -222,13 +248,13 @@ watch(() => props.unitCode, fetchFuelData);
 
 <style scoped>
 .dark-card {
-  width: 320px;
+  width: 340px;
   background-color: #1c1c1e;
   border-radius: 24px;
-  padding: 1.5rem;
+  padding: 1.75rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: #ffffff;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
   z-index: 1000;
 }
 
@@ -257,37 +283,37 @@ watch(() => props.unitCode, fetchFuelData);
   flex-direction: column;
 }
 
-/* Header */
+/* ── Header ── */
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .header-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #8e8e93;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 .pill-btn {
   background-color: #2c2c2e;
   color: #e5e5ea;
-  padding: 0.35rem 0.75rem;
+  padding: 0.4rem 0.85rem;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 500;
+  border: 1px solid #3a3a3c;
 }
 
-/* Main Section */
+/* ── Main Section ── */
 .main-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .value-container {
@@ -296,119 +322,143 @@ watch(() => props.unitCode, fetchFuelData);
 }
 
 .big-value {
-  font-size: 3.5rem;
+  font-size: 3.2rem;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.02em;
-  color: #f59e0b;
+  letter-spacing: -0.03em;
+  color: #e5e5ea;
 }
 
 .big-unit {
   font-size: 0.85rem;
-  color: #8e8e93;
+  color: #636366;
   font-weight: 500;
-  margin-top: 0.35rem;
+  margin-top: 0.4rem;
 }
 
-/* Circular Chart */
+/* ── Circle Ring ── */
 .circle-chart {
   position: relative;
-  width: 54px;
-  height: 54px;
+  width: 64px;
+  height: 64px;
 }
 
 .circular-svg {
   width: 100%;
   height: 100%;
+  transform: rotate(-90deg);
 }
 
 .circle-bg {
   fill: none;
   stroke: #333336;
-  stroke-width: 3.5;
+  stroke-width: 3;
 }
 
 .circle-fill {
   fill: none;
-  stroke: #f59e0b;
-  stroke-width: 3.5;
+  stroke: #ff453a;
+  stroke-width: 3;
   stroke-linecap: round;
-  animation: progress 1s ease-out forwards;
+  transition: stroke-dasharray 1s ease-out;
 }
 
-@keyframes progress {
-  0% { stroke-dasharray: 0, 100; }
-}
-
-.circle-icon {
+.circle-text {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #f59e0b;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #e5e5ea;
 }
 
-/* Separator */
-.separator {
-  height: 1px;
-  background-color: #333336;
-  margin: 1rem 0;
-}
-
-/* Stats Layout */
+/* ── Middle Stats (plain text, like "Transactions / Top Category") ── */
 .middle-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 1.75rem;
 }
 
-.stats-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.stat-block {
+.stat-col {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.75rem;
-  border-radius: 12px;
-  align-items: center;
-  justify-content: center;
+  gap: 0.3rem;
 }
-
-.bg-dim {
-  background-color: #2c2c2e;
-}
-
-.bg-sfc-good { background-color: rgba(48, 209, 88, 0.15); }
-.bg-sfc-bad { background-color: rgba(255, 69, 58, 0.15); }
 
 .stat-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: #8e8e93;
+  font-weight: 500;
 }
 
 .stat-value {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #ffffff;
 }
 
 .stat-unit {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: #8e8e93;
 }
 
-/* Colors for labels */
-.text-orange { color: #ff9f0a; }
-.text-green { color: #30d158; }
-.text-blue { color: #0a84ff; }
-.text-red { color: #ff453a; }
-.text-bright-green { color: #30d158; }
-.text-bright-red { color: #ff453a; }
+/* ── Distribution Section (horizontal bars) ── */
+.distribution-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.distribution-title {
+  font-size: 0.82rem;
+  color: #8e8e93;
+  font-weight: 500;
+  margin-bottom: 0.15rem;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bar-label {
+  font-size: 0.82rem;
+  color: #e5e5ea;
+  font-weight: 500;
+  width: 85px;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  height: 5px;
+  background-color: #2c2c2e;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+.bar-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e5e5ea;
+  width: 45px;
+  text-align: right;
+  flex-shrink: 0;
+}
 </style>
