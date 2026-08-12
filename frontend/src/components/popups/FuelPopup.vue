@@ -1,53 +1,64 @@
 <template>
-  <div class="fuel-popup">
-    <div v-if="loading" class="popup-loading">Loading fuel data...</div>
+  <div class="fuel-popup-pro">
+    <div v-if="loading" class="popup-loading">
+      <div class="spinner"></div>
+      <span>Loading Analysis...</span>
+    </div>
+    
     <div v-else class="fuel-content">
+      <!-- Header -->
       <div class="popup-header">
-        <div class="icon-box">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+          </svg>
         </div>
-        <span class="header-title">Fuel Accuracy</span>
-      </div>
-      
-      <div class="main-metric">
-        <div class="metric-value">{{ fuelData.l_hm.toFixed(2) }}</div>
-        <div class="metric-unit">L/HM</div>
-      </div>
-      
-      <div class="stats-grid">
-        <div class="stat-card bg-orange-light">
-          <div class="stat-label text-orange">DISTANCE</div>
-          <div class="stat-val text-brown">{{ fuelData.distance.toFixed(1) }} km</div>
-        </div>
-        <div class="stat-card bg-green-light">
-          <div class="stat-label text-green">HM USED</div>
-          <div class="stat-val text-dark-green">{{ fuelData.hm_used.toFixed(1) }} hm</div>
-        </div>
-      </div>
-      
-      <div class="stats-grid-3">
-        <div class="stat-card bg-blue-light">
-          <div class="stat-label text-blue">RATIO(KM/L)</div>
-          <div class="stat-val text-dark-blue">{{ fuelData.ratio.toFixed(2) }}</div>
-        </div>
-        <div class="stat-card bg-orange-light">
-          <div class="stat-label text-orange">LTR / TON</div>
-          <div class="stat-val text-brown">{{ fuelData.ltr_ton.toFixed(2) }}</div>
-        </div>
-        <div class="stat-card bg-red-light">
-          <div class="stat-label text-red">SFC</div>
-          <div class="stat-val text-dark-red">0.000</div>
+        <div class="header-text">
+          <h4 class="title">Fuel Analysis</h4>
+          <span class="subtitle">Unit {{ unitCode }}</span>
         </div>
       </div>
 
-      <div class="stats-grid" style="margin-top: 0.5rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem;">
-        <div class="stat-card" style="background: #f8fafc;">
-          <div class="stat-label" style="color: #64748b;">TOTAL FUEL</div>
-          <div class="stat-val text-dark-blue">{{ fuelData.total_liters.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1}) }} L</div>
+      <!-- Main Metric -->
+      <div class="main-metric-box">
+        <div class="metric-label">Efficiency (L/HM)</div>
+        <div class="metric-value-large">
+          {{ fuelData.l_hm.toFixed(2) }}
         </div>
-        <div class="stat-card" style="background: #f8fafc;">
-          <div class="stat-label" style="color: #64748b;">EVENTS</div>
-          <div class="stat-val text-dark-blue">{{ fuelData.refuel_count }}x Refuel</div>
+      </div>
+
+      <!-- Grid 2x2 -->
+      <div class="pro-grid">
+        <div class="pro-card">
+          <span class="pro-label">Distance</span>
+          <span class="pro-val">{{ fuelData.distance.toFixed(1) }} <small>km</small></span>
+        </div>
+        <div class="pro-card">
+          <span class="pro-label">Engine Hours</span>
+          <span class="pro-val">{{ fuelData.hm_used.toFixed(1) }} <small>hm</small></span>
+        </div>
+        <div class="pro-card">
+          <span class="pro-label">Mileage (KM/L)</span>
+          <span class="pro-val">{{ fuelData.ratio.toFixed(2) }}</span>
+        </div>
+        <div class="pro-card">
+          <span class="pro-label">Fuel / Ton</span>
+          <span class="pro-val">{{ fuelData.ltr_ton.toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <hr class="pro-divider" />
+
+      <!-- Footer Stats -->
+      <div class="pro-footer">
+        <div class="footer-item">
+          <span class="f-label">Total Consumed</span>
+          <span class="f-val">{{ fuelData.total_liters.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1}) }} L</span>
+        </div>
+        <div class="footer-item">
+          <span class="f-label">Refuel Events</span>
+          <span class="f-val">{{ fuelData.refuel_count }}x</span>
         </div>
       </div>
     </div>
@@ -133,120 +144,173 @@ watch(() => props.unitCode, fetchFuelData);
 </script>
 
 <style scoped>
-.fuel-popup {
-  width: 280px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
+.fuel-popup-pro {
+  width: 320px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
   font-family: var(--font, 'Inter', sans-serif);
   z-index: 1000;
+  overflow: hidden;
 }
 
 .popup-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   color: #64748b;
   font-size: 0.9rem;
-  text-align: center;
-  padding: 1rem;
+  height: 200px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f1f5f9;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .fuel-content {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
 }
 
 .popup-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.icon-box {
-  background: #d97706;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+.header-icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 8px;
 }
 
-.header-title {
-  font-size: 1.1rem;
+.header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.main-metric-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  background: #ffffff;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value-large {
+  font-size: 3.5rem;
   font-weight: 800;
   color: #0f172a;
-  margin: 0;
-}
-
-.main-metric {
-  text-align: center;
-  padding: 0.5rem 0;
-}
-
-.metric-value {
-  font-size: 3.5rem;
-  font-weight: 900;
-  color: #d97706;
   line-height: 1;
-  letter-spacing: -1px;
+  letter-spacing: -0.02em;
 }
 
-.metric-unit {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #94a3b8;
-  margin-top: 0.25rem;
-}
-
-.stats-grid {
+.pro-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 1px;
+  background: #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.stats-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.stat-card {
-  padding: 0.5rem;
-  border-radius: 8px;
-  text-align: center;
+.pro-card {
+  background: #ffffff;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  justify-content: center;
 }
 
-.stat-label {
-  font-size: 0.6rem;
-  font-weight: 800;
+.pro-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
-.stat-val {
-  font-size: 0.85rem;
-  font-weight: 800;
+.pro-val {
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 700;
 }
 
-/* Colors matching the reference image */
-.bg-orange-light { background: #fffbeb; }
-.text-orange { color: #d97706; }
-.text-brown { color: #78350f; }
+.pro-val small {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
 
-.bg-green-light { background: #f0fdf4; }
-.text-green { color: #16a34a; }
-.text-dark-green { color: #14532d; }
+.pro-divider {
+  margin: 0;
+  border: 0;
+}
 
-.bg-blue-light { background: #eff6ff; }
-.text-blue { color: #2563eb; }
-.text-dark-blue { color: #1e3a8a; }
+.pro-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+}
 
-.bg-red-light { background: #fef2f2; }
-.text-red { color: #dc2626; }
-.text-dark-red { color: #7f1d1d; }
+.footer-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.f-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.f-val {
+  font-size: 0.85rem;
+  color: #0f172a;
+  font-weight: 700;
+}
 </style>
