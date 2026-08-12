@@ -62,22 +62,29 @@
         <!-- Total Consumed -->
         <div class="bar-row">
           <div class="bar-label"><span class="dot red"></span> Total Consumed</div>
-          <div class="bar-track"><div class="bar-fill red" style="width: 100%"></div></div>
+          <div class="bar-track"><div class="bar-fill red" :style="{ width: fuelData.total_liters > 0 ? '100%' : '0%' }"></div></div>
           <div class="bar-value">{{ fuelData.total_liters.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1}) }} L</div>
         </div>
         
         <!-- Mileage -->
         <div class="bar-row">
           <div class="bar-label"><span class="dot white"></span> Mileage (KM/L)</div>
-          <div class="bar-track"><div class="bar-fill white" style="width: 55%"></div></div>
+          <div class="bar-track"><div class="bar-fill white" :style="{ width: Math.min(100, (fuelData.ratio / 4) * 100) + '%' }"></div></div>
           <div class="bar-value">{{ fuelData.ratio.toFixed(2) }}</div>
         </div>
 
         <!-- Fuel / Ton -->
         <div class="bar-row">
           <div class="bar-label"><span class="dot gray"></span> Fuel / Ton</div>
-          <div class="bar-track"><div class="bar-fill gray" style="width: 30%"></div></div>
+          <div class="bar-track"><div class="bar-fill gray" :style="{ width: Math.min(100, (fuelData.ltr_ton / 2) * 100) + '%' }"></div></div>
           <div class="bar-value">{{ fuelData.ltr_ton.toFixed(2) }}</div>
+        </div>
+        
+        <!-- Hauling Netto -->
+        <div class="bar-row">
+          <div class="bar-label"><span class="dot blue"></span> Hauling Netto</div>
+          <div class="bar-track"><div class="bar-fill blue" :style="{ width: fuelData.total_ton > 0 ? '100%' : '0%' }"></div></div>
+          <div class="bar-value">{{ fuelData.total_ton.toFixed(1) }} Ton</div>
         </div>
       </div>
     </div>
@@ -365,6 +372,7 @@ watch(() => props.unitCode, fetchFuelData);
 .dot.red { background-color: #ff453a; }
 .dot.white { background-color: #e5e5ea; }
 .dot.gray { background-color: #636366; }
+.dot.blue { background-color: #0a84ff; }
 
 .bar-track {
   flex-grow: 1;
@@ -377,15 +385,18 @@ watch(() => props.unitCode, fetchFuelData);
 .bar-fill {
   height: 100%;
   border-radius: 2px;
+  transition: width 1s ease-out;
 }
 .bar-fill.red { background-color: #ff453a; }
 .bar-fill.white { background-color: #e5e5ea; }
 .bar-fill.gray { background-color: #636366; }
+.bar-fill.blue { background-color: #0a84ff; }
 
 .bar-value {
-  width: 50px;
+  width: 55px;
   text-align: right;
   font-weight: 500;
   color: #ffffff;
 }
+
 </style>
