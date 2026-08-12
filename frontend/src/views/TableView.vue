@@ -66,10 +66,10 @@
 
             <!-- Top Event -->
             <td class="relative interactive-cell" @mouseenter="hoveredDelayUnit = unit.unit_code" @mouseleave="hoveredDelayUnit = null">
-              <div v-if="getTopEvent(unit)" class="top-event">
-                <span class="event-name" :title="getTopEvent(unit).status">{{ getTopEvent(unit).status }}</span>
-                <span class="event-hours">{{ getTopEvent(unit).hours.toFixed(1) }}h</span>
-              </div>
+                <div v-if="getTopEvent(unit)" class="top-event">
+                  <span class="event-name" :title="getTopEvent(unit).status">{{ formatDelayReason(getTopEvent(unit).status) }}</span>
+                  <span class="event-hours">{{ getTopEvent(unit).hours.toFixed(1) }}h</span>
+                </div>
               <span v-else class="text-xs text-gray-400">-</span>
               
               <TopDelayPopup v-if="hoveredDelayUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
@@ -139,6 +139,7 @@ import apiClient from '../services/apiClient';
 
 import TopDelayPopup from '../components/popups/TopDelayPopup.vue';
 import FuelPopup from '../components/popups/FuelPopup.vue';
+import { formatDelayReason } from '../utils/formatters';
 
 const kpiStore = useKpiStore();
 const filterStore = useFilterStore();

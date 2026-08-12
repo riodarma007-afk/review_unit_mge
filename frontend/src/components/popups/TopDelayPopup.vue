@@ -31,6 +31,7 @@ const delayCache = new Map();
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import apiClient from '../../services/apiClient';
+import { formatDelayReason } from '../../utils/formatters';
 
 const props = defineProps({
   unitCode: {
@@ -77,10 +78,11 @@ const fetchDelayBreakdown = async () => {
     
     if (response.data && response.data.items) {
       delayBreakdown.value = response.data.items.map(item => {
-        const reason = item.status || 'Unknown';
+        const rawReason = item.status || 'Unknown';
+        const reason = formatDelayReason(rawReason);
         const act = item.hours || 0;
         
-        let plan = MOCK_PLANS[reason] !== undefined ? MOCK_PLANS[reason] : (act > 0 ? (act * 0.8).toFixed(2) : null);
+        let plan = MOCK_PLANS[rawReason] !== undefined ? MOCK_PLANS[rawReason] : (act > 0 ? (act * 0.8).toFixed(2) : null);
         if (plan !== null) plan = parseFloat(plan);
         
         const isOverPlan = plan !== null && act > plan;
