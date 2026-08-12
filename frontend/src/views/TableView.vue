@@ -155,64 +155,69 @@ const unitExtraData = ref({});
 const loadingStates = ref({});
 
 const fetchExtraData = async () => {
-  const units = kpiStore.unitPerformances || [];
-  const filters = filterStore.filters;
-  
-  const params = new URLSearchParams();
-  if (filters.date_from) params.append('date_from', filters.date_from);
-  if (filters.date_to) params.append('date_to', filters.date_to);
-  if (filters.shift) params.append('shift', filters.shift);
-  if (filters.pit) params.append('pit', filters.pit);
-
-  for (const unit of units) {
-    const code = unit.unit_code;
-    if (!unitExtraData.value[code]) {
-      unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, fuel: 0, ratio: 0 };
-    }
-    if (!loadingStates.value[code]) {
-      loadingStates.value[code] = { hauling: true, fuel: true, transit: true, ob: true };
-    } else {
-      loadingStates.value[code].hauling = true;
-      loadingStates.value[code].fuel = true;
-      loadingStates.value[code].transit = true;
-      loadingStates.value[code].ob = true;
-    }
-
-    const unitParams = new URLSearchParams(params);
-    unitParams.append('unit_code', code);
+    const units = kpiStore.unitPerformances || [];
+    const filters = filterStore.filters;
     
-    // Fetch hauling
-    apiClient.get(`/hauling/unit?${unitParams.toString()}`).then(res => {
-      unitExtraData.value[code].hauling = res.data?.total_tonage || 0;
-      unitExtraData.value[code].payload = res.data?.avg_payload || 0;
-      unitExtraData.value[code].load_time = res.data?.avg_loading_time || 0;
-    }).catch(e => console.error(e)).finally(() => {
-      loadingStates.value[code].hauling = false;
-    });
+    const params = new URLSearchParams();
+    if (filters.date_from) params.append('date_from', filters.date_from);
+    if (filters.date_to) params.append('date_to', filters.date_to);
+    if (filters.shift) params.append('shift', filters.shift);
+    if (filters.pit) params.append('pit', filters.pit);
+  
+    // Process units in batches to prevent browser connection limits / server overload
+    const batchSize = 3;
+    for (let i = 0; i < units.length; i += batchSize) {
+      const batch = units.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (unit) => {
+        const code = unit.unit_code;
+        if (!unitExtraData.value[code]) {
+          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, fuel: 0, ratio: 0 };
+        }
+        if (!loadingStates.value[code]) {
+          loadingStates.value[code] = { hauling: true, fuel: true, transit: true, ob: true };
+        } else {
+          loadingStates.value[code].hauling = true;
+          loadingStates.value[code].fuel = true;
+          loadingStates.value[code].transit = true;
+          loadingStates.value[code].ob = true;
+        }
 
-    // Fetch transit
-    apiClient.get(`/transit/unit?${unitParams.toString()}`).then(res => {
-      unitExtraData.value[code].transit = res.data?.total_netto || 0;
-    }).catch(e => console.error(e)).finally(() => {
-      loadingStates.value[code].transit = false;
-    });
+        const unitParams = new URLSearchParams(params);
+        unitParams.append('unit_code', code);
+        
+        try {
+          const [haulingRes, transitRes, obRes, fuelRes] = await Promise.allSettled([
+            apiClient.get(`/hauling/unit?${unitParams.toString()}`),
+            apiClient.get(`/transit/unit?${unitParams.toString()}`),
+            apiClient.get(`/ob/unit?${unitParams.toString()}`),
+            apiClient.get(`/fuel/unit?${unitParams.toString()}`)
+          ]);
 
-    // Fetch OB
-    apiClient.get(`/ob/unit?${unitParams.toString()}`).then(res => {
-      unitExtraData.value[code].ob = res.data?.total_bcm || 0;
-    }).catch(e => console.error(e)).finally(() => {
-      loadingStates.value[code].ob = false;
-    });
-
-    // Fetch fuel
-    apiClient.get(`/fuel/unit?${unitParams.toString()}`).then(res => {
-      unitExtraData.value[code].fuel = res.data?.total_liters || 0;
-      unitExtraData.value[code].ratio = res.data?.average_km_per_liter || 0;
-    }).catch(e => console.error(e)).finally(() => {
-      loadingStates.value[code].fuel = false;
-    });
-  }
-};
+          if (haulingRes.status === 'fulfilled') {
+            unitExtraData.value[code].hauling = haulingRes.value.data?.total_tonage || 0;
+            unitExtraData.value[code].payload = haulingRes.value.data?.avg_payload || 0;
+            unitExtraData.value[code].load_time = haulingRes.value.data?.avg_loading_time || 0;
+          }
+          if (transitRes.status === 'fulfilled') {
+            unitExtraData.value[code].transit = transitRes.value.data?.total_netto || 0;
+          }
+          if (obRes.status === 'fulfilled') {
+            unitExtraData.value[code].ob = obRes.value.data?.total_bcm || 0;
+          }
+          if (fuelRes.status === 'fulfilled') {
+            unitExtraData.value[code].fuel = fuelRes.value.data?.total_liters || 0;
+            unitExtraData.value[code].ratio = fuelRes.value.data?.average_km_per_liter || 0;
+          }
+        } finally {
+          loadingStates.value[code].hauling = false;
+          loadingStates.value[code].transit = false;
+          loadingStates.value[code].ob = false;
+          loadingStates.value[code].fuel = false;
+        }
+      }));
+    }
+  };
 
 watch(() => kpiStore.unitPerformances, () => {
   fetchExtraData();
