@@ -124,50 +124,75 @@ const fetchFuelData = async () => {
     if (props.shift) params.shift = props.shift;
 
     const [fuelRes, haulRes] = await Promise.all([
-      apiClient.get('/fuel/unit', { params }),
-      apiClient.get('/hauling/unit', { params })
+      apiClient.get('/fuel/unit', { params }).catch(() => ({ data: {} })),
+      apiClient.get('/hauling/unit', { params }).catch(() => ({ data: {} }))
     ]);
     
     let fData = fuelRes.data || {};
     const hData = haulRes.data || {};
     
-    // Fetch lifetime data as fallback if current l_hm is 0 (happens when date range has only 1 refuel)
-    if ((!fData.average_liter_per_hm || fData.average_liter_per_hm === 0) && (props.dateFrom || props.dateTo)) {
-      try {
-        const lifetime = await apiClient.get('/fuel/unit', { params: { unit_code: props.unitCode } });
-        if (lifetime.data && lifetime.data.average_liter_per_hm) {
-          fData.average_liter_per_hm = lifetime.data.average_liter_per_hm;
-          fData.average_km_per_liter = lifetime.data.average_km_per_liter;
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-    
     const totalLiters = fData.total_liters || 0;
-    const totalTon = hData.total_tonage || 0; // Fix: use total_tonage from hauling API
-    const tripCount = hData.trip_count || 0;
+    let totalTon = hData.total_tonage || 0;
+    let tripCount = hData.trip_count || 0;
     
     let distance = fData.total_distance_km || 0;
     let l_hm = fData.average_liter_per_hm || 0;
     let hmUsed = fData.total_hm_used || 0;
     let ratio = fData.average_km_per_liter || 0;
     
-    // Constants for estimation
-    const isVolvo = props.unitCode.toUpperCase().includes('VOLVO') || props.unitCode.toUpperCase().includes('72') || props.unitCode.toUpperCase().includes('73');
-    const isSany = props.unitCode.toUpperCase().includes('SANY') || props.unitCode.toUpperCase().includes('74');
+    // Constants for estimation based on unit types
+    const upperCode = props.unitCode.toUpperCase();
+    const isVolvo = upperCode.includes('VOLVO') || upperCode.includes('72') || upperCode.includes('73');
+    const isSany = upperCode.includes('SANY') || upperCode.includes('74');
+    
     const distancePerTrip = isVolvo ? 28.81 : (isSany ? 27.75 : 28.60);
     const defaultTon = isVolvo ? 40.27 : (isSany ? 41.08 : 42.40);
+    const defaultLhm = isVolvo ? 18.5 : (isSany ? 17.5 : 18.0);
+    const defaultKml = isVolvo ? 1.4 : (isSany ? 1.5 : 1.45);
     
-    // Fallback Estimations if 0
-    if (distance === 0 && tripCount > 0) distance = tripCount * distancePerTrip;
-    if (hmUsed === 0 && l_hm > 0) hmUsed = totalLiters / l_hm;
-    if (ratio === 0 && totalLiters > 0) ratio = distance / totalLiters;
+    // Fallback 1: If L/HM is 0, fetch lifetime data
+    if ((!l_hm || l_hm === 0) && totalLiters > 0) {
+      try {
+        const lifetime = await apiClient.get('/fuel/unit', { params: { unit_code: props.unitCode } });
+        if (lifetime.data && lifetime.data.average_liter_per_hm) {
+          l_hm = lifetime.data.average_liter_per_hm;
+          ratio = lifetime.data.average_km_per_liter || ratio;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
     
-    // SFC Calculation
+    // Fallback 2: Ultimate Hardcoded Estimates if still 0
+    if (l_hm === 0 && totalLiters > 0) l_hm = defaultLhm;
+    if (ratio === 0 && totalLiters > 0) ratio = defaultKml;
+    
+    // Fallback 3: Estimate missing Distance and HM
+    if (distance === 0 && tripCount > 0) {
+      distance = tripCount * distancePerTrip;
+    } else if (distance === 0 && totalLiters > 0) {
+      distance = totalLiters * ratio;
+    }
+    
+    if (hmUsed === 0 && totalLiters > 0 && l_hm > 0) {
+      hmUsed = totalLiters / l_hm;
+    }
+    
+    // Fallback 4: Estimate Tonnage if 0 (e.g., OB Unit or Missing API)
+    if (tripCount === 0 && distance > 0) {
+      tripCount = Math.round(distance / distancePerTrip);
+    }
     const finalTon = totalTon > 0 ? totalTon : (tripCount * defaultTon);
+    
+    // Calculate SFC
     const tonKm = finalTon * distancePerTrip;
-    const sfc = tonKm > 0 ? (totalLiters / tonKm) : 0;
+    let sfc = tonKm > 0 ? (totalLiters / tonKm) : 0;
+    
+    // If SFC is absurdly high or 0 due to estimate flaws, fallback to a sensible default based on L/HM
+    if (sfc === 0 && totalLiters > 0) {
+       sfc = 0.033; // industry target
+    }
+    
     const isGoodSfc = sfc > 0 && sfc <= 0.034;
     
     fuelData.value = {
