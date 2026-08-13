@@ -110,7 +110,10 @@
             </td>
             
             <!-- Ritase -->
-            <td class="font-mono text-sm">{{ (unit.total_ritasi || 0).toFixed(1) }}</td>
+            <td class="font-mono text-sm">
+              <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ (unitExtraData[unit.unit_code]?.ritpiday || 0).toFixed(1) }}</span>
+            </td>
 
             <!-- Fuel -->
             <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredFuelUnit = unit.unit_code" @mouseleave="hoveredFuelUnit = null">
@@ -184,7 +187,7 @@ const fetchExtraData = async () => {
       await Promise.all(batch.map(async (unit) => {
         const code = unit.unit_code;
         if (!unitExtraData.value[code]) {
-          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, fuel: 0, ratio: 0 };
+          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, ritpiday: 0, fuel: 0, ratio: 0 };
         }
         if (!loadingStates.value[code]) {
           loadingStates.value[code] = { hauling: true, fuel: true, transit: true, ob: true };
@@ -210,6 +213,7 @@ const fetchExtraData = async () => {
             unitExtraData.value[code].hauling = haulingRes.value.data?.total_tonage || 0;
             unitExtraData.value[code].payload = haulingRes.value.data?.avg_payload || 0;
             unitExtraData.value[code].load_time = haulingRes.value.data?.avg_loading_time || 0;
+            unitExtraData.value[code].ritpiday = haulingRes.value.data?.avg_ritasi_per_day || 0;
           }
           if (transitRes.status === 'fulfilled') {
             unitExtraData.value[code].transit = transitRes.value.data?.total_netto || 0;
@@ -258,7 +262,7 @@ const getSortValue = (unit, key) => {
     case 'transit': return unitExtraData.value[unit.unit_code]?.transit || 0;
     case 'ob': return unitExtraData.value[unit.unit_code]?.ob || 0;
     case 'payload': return unitExtraData.value[unit.unit_code]?.payload || 0;
-    case 'ritasi': return unit.total_ritasi || 0;
+    case 'ritasi': return unitExtraData.value[unit.unit_code]?.ritpiday || 0;
     case 'fuel': return unitExtraData.value[unit.unit_code]?.fuel || 0;
     default: return 0;
   }
