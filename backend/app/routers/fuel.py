@@ -42,7 +42,7 @@ async def _fetch_fuel_pages(params: dict) -> list:
     headers = {"X-API-Key": settings.FUEL_API_KEY}
     PAGE_LIMIT = 500  # API maximum
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=5.0) as client:
         # First request to get totalPages
         try:
             resp = await client.get(

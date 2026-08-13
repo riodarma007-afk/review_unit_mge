@@ -23,7 +23,7 @@ async def _fetch_pages(endpoint: str, params: dict) -> list:
     PAGE_LIMIT = 500
     url = settings.FUEL_API_URL.replace("/fuel", endpoint)
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=5.0) as client:
         try:
             resp = await client.get(
                 url,

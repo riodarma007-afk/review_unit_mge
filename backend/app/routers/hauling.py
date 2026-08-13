@@ -28,7 +28,7 @@ async def _fetch_hauling_pages(params: dict) -> list:
     # Use the FUEL_API_URL as base but replace /fuel with /coal/hauling
     hauling_url = settings.FUEL_API_URL.replace("/fuel", "/coal/hauling")
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=5.0) as client:
         # First request to get totalPages
         try:
             resp = await client.get(

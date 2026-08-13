@@ -27,7 +27,7 @@ async def _fetch_transit_pages(params: dict) -> list:
     PAGE_LIMIT = 500
     transit_url = settings.FUEL_API_URL.replace("/fuel", "/coal/transit")
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=5.0) as client:
         # First request to get totalPages
         try:
             resp = await client.get(
