@@ -104,7 +104,7 @@ async def get_fuel_by_unit(
 
     fuel_unit_code = optrack_to_fuel(unit_code)
 
-    params = {}
+    params = {"search": fuel_unit_code}
     if date_from:
         params["date_from"] = date_from
     if date_to:

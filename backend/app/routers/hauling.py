@@ -86,7 +86,7 @@ async def get_hauling_by_unit(
         if time.time() - cached_time < CACHE_TTL:
             return cached_result
     
-    params = {}
+    params = {"search": unit_code}
     if date_from:
         params["date_from"] = date_from
     if date_to:
