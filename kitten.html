@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kitten Loading Animation</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            font-family: sans-serif;
+        }
+
+        .loader-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        #kitten {
+            width: 280px;
+            height: auto;
+        }
+
+        #kitten-body-group {
+            transform-origin: 260px 500px;
+            animation: breathe 2.2s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.03);
+            }
+        }
+
+        #tail {
+            transform-origin: 300px 380px;
+            animation: wag 1.5s ease-in-out infinite;
+        }
+
+        @keyframes wag {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(6deg);
+            }
+        }
+
+        #head-group {
+            transform-origin: 175px 190px;
+            animation: nod 2.2s ease-in-out infinite;
+        }
+
+        @keyframes nod {
+
+            0%,
+            100% {
+                transform: rotate(0deg) translateY(0px);
+            }
+
+            50% {
+                transform: rotate(-2deg) translateY(-3px);
+            }
+        }
+
+        #eyes path {
+            animation: blink 3s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        @keyframes blink {
+
+            0%,
+            90%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            95% {
+                transform: scaleY(0.3);
+            }
+        }
+
+        #whiskers-left {
+            transform-origin: 95px 130px;
+            animation: whisk 2.4s ease-in-out infinite;
+        }
+
+        #whiskers-right {
+            transform-origin: 250px 130px;
+            animation: whisk 2.4s ease-in-out infinite reverse;
+        }
+
+        @keyframes whisk {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(2deg);
+            }
+        }
+
+        .paw {
+            transform-origin: top center;
+            animation: tap 1.2s ease-in-out infinite;
+        }
+
+        .paw-mid {
+            animation-delay: .2s;
+        }
+
+        .paw-right {
+            animation-delay: .4s;
+        }
+
+        @keyframes tap {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(4px);
+            }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: #c06a2c;
+            letter-spacing: 2px;
+            animation: fade 1.4s ease-in-out infinite;
+        }
+
+        @keyframes fade {
+
+            0%,
+            100% {
+                opacity: .4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="loader-wrap">
+        <svg id="kitten" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg">
+            <g id="kitten-body-group">
+
+                <!-- ================= EKOR (paling belakang, digambar dulu) ================= -->
+                <g id="tail">
+                    <path d="M295,395
+               C360,400 400,375 405,335
+               C409,303 385,285 362,268
+               C340,252 338,222 360,205
+               C378,192 400,196 412,178" fill="none" stroke="#f4a13a" stroke-width="42" stroke-linecap="round" />
+                    <circle cx="414" cy="176" r="20" fill="#e0781f" />
+                </g>
+
+                <!-- ================= BADAN (menyatu ke atas sampai belakang kepala) ================= -->
+                <path d="M175,150
+             C110,150 70,195 68,270
+             C66,330 75,410 105,450
+             C125,475 155,482 190,482
+             L280,482
+             C315,480 335,455 340,415
+             C346,360 340,290 315,235
+             C295,190 245,150 175,150 Z" fill="#f4a13a" />
+
+                <!-- belang badan -->
+                <g fill="#e0781f" opacity="0.9">
+                    <ellipse cx="105" cy="225" rx="9" ry="20" transform="rotate(-15 105 225)" />
+                    <ellipse cx="90" cy="270" rx="9" ry="22" transform="rotate(-6 90 270)" />
+                    <ellipse cx="88" cy="320" rx="9" ry="22" transform="rotate(2 88 320)" />
+                    <ellipse cx="185" cy="210" rx="9" ry="22" transform="rotate(6 185 210)" />
+                    <ellipse cx="215" cy="220" rx="9" ry="24" transform="rotate(10 215 220)" />
+                    <ellipse cx="245" cy="235" rx="9" ry="24" transform="rotate(14 245 235)" />
+                    <ellipse cx="270" cy="260" rx="9" ry="22" transform="rotate(18 270 260)" />
+                    <ellipse cx="290" cy="300" rx="8" ry="20" transform="rotate(20 290 300)" />
+                </g>
+
+                <!-- ================= KAKI DEPAN (rata, tanpa ujung gelap) ================= -->
+                <path class="paw paw-left" d="M120,410 L120,468 Q120,482 135,482 Q150,482 150,468 L150,415 Z"
+                    fill="#f4a13a" />
+                <line x1="135" y1="415" x2="135" y2="475" stroke="#2b1a52" stroke-width="4" stroke-linecap="round" />
+
+                <path class="paw paw-mid" d="M180,375 L180,470 Q180,483 195,483 Q210,483 210,470 L210,375 Z"
+                    fill="#f4a13a" />
+                <line x1="195" y1="340" x2="195" y2="478" stroke="#2b1a52" stroke-width="4" stroke-linecap="round" />
+
+                <path class="paw paw-right" d="M235,385 L235,470 Q235,483 250,483 Q265,483 265,470 L265,385 Z"
+                    fill="#f4a13a" />
+                <line x1="250" y1="360" x2="250" y2="478" stroke="#2b1a52" stroke-width="4" stroke-linecap="round" />
+
+                <!-- ================= KEPALA (menutup turun sampai badan, tidak ada celah) ================= -->
+                <g id="head-group">
+
+                    <!-- telinga -->
+                    <path d="M90,55 L68,5 L138,48 Z" fill="#f4a13a" />
+                    <path d="M96,50 L84,25 L122,49 Z" fill="#f9c9d4" />
+
+                    <path d="M255,55 L277,5 L207,48 Z" fill="#f4a13a" />
+                    <path d="M249,50 L261,25 L223,49 Z" fill="#f9c9d4" />
+
+                    <!-- belang telinga -->
+                    <path d="M100,45 C100,35 96,25 90,18" stroke="#e0781f" stroke-width="4" stroke-linecap="round"
+                        fill="none" />
+                    <path d="M245,45 C245,35 249,25 255,18" stroke="#e0781f" stroke-width="4" stroke-linecap="round"
+                        fill="none" />
+
+                    <!-- bentuk kepala bulat, turun sampai y=225 supaya nyambung ke badan (badan mulai y=150-235) -->
+                    <path d="M55,140
+               C48,85 95,35 172,35
+               C249,35 296,85 289,140
+               C296,180 260,225 172,225
+               C84,225 48,180 55,140 Z" fill="#f4a13a" />
+
+                    <!-- belang kepala -->
+                    <g stroke="#e0781f" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.9">
+                        <path d="M115,40 C118,58 118,75 112,88" />
+                        <path d="M172,36 C174,55 174,73 171,86" />
+                        <path d="M230,40 C227,58 227,75 233,88" />
+                    </g>
+
+                    <!-- moncong krem (bentuk oval halus, tanpa garis dalam aneh) -->
+                    <path d="M172,120
+               C210,120 248,138 248,168
+               C248,196 214,212 172,212
+               C130,212 96,196 96,168
+               C96,138 134,120 172,120 Z" fill="#fbcf8e" />
+
+                    <!-- pipi merah -->
+                    <ellipse cx="103" cy="140" rx="14" ry="9" fill="#f26d7d" />
+                    <ellipse cx="241" cy="140" rx="14" ry="9" fill="#f26d7d" />
+
+                    <!-- mata tertutup bentuk ^ (lebih besar & tegas) -->
+                    <g id="eyes">
+                        <path d="M116,122 Q133,104 150,122" stroke="#2b1a52" stroke-width="7" fill="none"
+                            stroke-linecap="round" />
+                        <path d="M194,122 Q211,104 228,122" stroke="#2b1a52" stroke-width="7" fill="none"
+                            stroke-linecap="round" />
+                    </g>
+
+                    <!-- hidung -->
+                    <path d="M172,150 L164,162 L180,162 Z" fill="#f26d7d" />
+
+                    <!-- mulut senyum sederhana (bentuk :3) -->
+                    <path d="M158,173 C165,181 179,181 186,173" stroke="#2b1a52" stroke-width="4" fill="none"
+                        stroke-linecap="round" />
+
+                    <!-- kumis kiri -->
+                    <g id="whiskers-left" stroke="#2b1a52" stroke-width="2.5" stroke-linecap="round" fill="none">
+                        <path d="M92,138 C64,132 36,128 10,130" />
+                        <path d="M90,148 C62,148 34,149 6,154" />
+                        <path d="M92,158 C66,163 40,168 14,176" />
+                    </g>
+                    <!-- kumis kanan -->
+                    <g id="whiskers-right" stroke="#2b1a52" stroke-width="2.5" stroke-linecap="round" fill="none">
+                        <path d="M252,138 C280,132 308,128 334,130" />
+                        <path d="M254,148 C282,148 310,149 338,154" />
+                        <path d="M252,158 C278,163 304,168 330,176" />
+                    </g>
+                </g>
+
+            </g>
+        </svg>
+
+        <div class="loading-text">MEMUAT...</div>
+    </div>
+
+</body>
+
+</html>

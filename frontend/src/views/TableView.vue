@@ -27,7 +27,6 @@
             
             <!-- Fuel -->
             <th class="sortable" @click="sortBy('fuel')"><div class="th-content"><Fuel class="icon" /> Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
-            <th><div class="th-content"><Zap class="icon" /> KM/L</div></th>
           </tr>
         </thead>
         <tbody>
@@ -39,10 +38,11 @@
             <!-- PA Column with Mini Bar -->
             <td>
               <div class="cell-val-bar">
-                <span :class="unit.pa_target > 0 && (unit.pa_percent || 0) >= unit.pa_target ? 'text-green-500' : 'text-red-500'">{{ (unit.pa_percent || 0).toFixed(1) }}%</span>
-                <div class="mini-bar-bg">
+                <span :class="(unit.pa_percent || 0) >= (kpiStore.summary?.targets?.pa || 90) ? 'text-green-500' : 'text-red-500'">{{ (unit.pa_percent || 0).toFixed(1) }}%</span>
+                <div class="mini-bar-bg" :title="`Target: ${kpiStore.summary?.targets?.pa || 90}%`">
+                  <div class="mini-bar-target-marker" :style="{ left: Math.min((kpiStore.summary?.targets?.pa || 90), 100) + '%' }"></div>
                   <div class="mini-bar-fill" 
-                       :class="unit.pa_target > 0 && (unit.pa_percent || 0) >= unit.pa_target ? 'bg-green-500' : 'bg-red-500'" 
+                       :class="(unit.pa_percent || 0) >= (kpiStore.summary?.targets?.pa || 90) ? 'bg-green-500' : 'bg-red-500'" 
                        :style="{ width: Math.min((unit.pa_percent || 0), 100) + '%' }"></div>
                 </div>
               </div>
@@ -51,10 +51,11 @@
             <!-- UA Column with Mini Bar -->
             <td>
               <div class="cell-val-bar">
-                <span :class="unit.ua_target > 0 && (unit.ua_percent || 0) >= unit.ua_target ? 'text-green-500' : 'text-red-500'">{{ (unit.ua_percent || 0).toFixed(1) }}%</span>
-                <div class="mini-bar-bg">
+                <span :class="(unit.ua_percent || 0) >= (kpiStore.summary?.targets?.ua || 80) ? 'text-green-500' : 'text-red-500'">{{ (unit.ua_percent || 0).toFixed(1) }}%</span>
+                <div class="mini-bar-bg" :title="`Target: ${kpiStore.summary?.targets?.ua || 80}%`">
+                  <div class="mini-bar-target-marker" :style="{ left: Math.min((kpiStore.summary?.targets?.ua || 80), 100) + '%' }"></div>
                   <div class="mini-bar-fill" 
-                       :class="unit.ua_target > 0 && (unit.ua_percent || 0) >= unit.ua_target ? 'bg-green-500' : 'bg-red-500'" 
+                       :class="(unit.ua_percent || 0) >= (kpiStore.summary?.targets?.ua || 80) ? 'bg-green-500' : 'bg-red-500'" 
                        :style="{ width: Math.min((unit.ua_percent || 0), 100) + '%' }"></div>
                 </div>
               </div>
@@ -123,14 +124,9 @@
               <FuelPopup v-if="hoveredFuelUnit === unit.unit_code" :unit-code="unit.unit_code" :fuel-data-prop="unitExtraData[unit.unit_code]?.rawFuelData" :hauling-data-prop="unitExtraData[unit.unit_code]?.rawHaulingData" class="absolute-popup fuel-pos" />
             </td>
             
-            <!-- KM / L -->
-            <td class="font-mono text-sm text-green-600">
-              <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
-              <span v-else>{{ (unitExtraData[unit.unit_code]?.ratio || 0).toFixed(2) }}</span>
-            </td>
           </tr>
           <tr v-if="!sortedUnits || sortedUnits.length === 0">
-            <td colspan="13" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
+            <td colspan="12" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
           </tr>
         </tbody>
       </table>
@@ -455,18 +451,35 @@ const sortedUnits = computed(() => {
 }
 
 .mini-bar-bg {
-  height: 4px;
-  width: 80px;
-  background: #f1f5f9;
+  height: 8px;
+  width: 90px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.mini-bar-target-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 3px;
+  background-color: #0f172a;
   border-radius: 2px;
-  overflow: hidden;
+  z-index: 2;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.8);
 }
 
 .mini-bar-fill {
   height: 100%;
-  border-radius: 2px;
-  transition: width 0.5s ease-out;
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+.text-green-500 { color: #059669 !important; font-weight: 800; font-size: 0.95rem; }
+.text-red-500 { color: #dc2626 !important; font-weight: 800; font-size: 0.95rem; }
+.bg-green-500 { background: linear-gradient(90deg, #34d399, #10b981) !important; box-shadow: 0 1px 4px rgba(16, 185, 129, 0.4); }
+.bg-red-500 { background: linear-gradient(90deg, #f87171, #ef4444) !important; box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4); }
 
 .top-event {
   display: flex;

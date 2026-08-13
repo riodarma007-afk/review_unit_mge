@@ -29,9 +29,11 @@
       </div>
 
       <div class="settings-grid">
-        <!-- FORM SECTION -->
-        <div class="settings-card form-card">
-          <h3>{{ editingId ? 'Edit Plan' : 'Add New Plan' }}</h3>
+        <!-- LEFT COLUMN -->
+        <div class="left-column">
+          <!-- FORM SECTION -->
+          <div class="settings-card form-card">
+            <h3>{{ editingId ? 'Edit Plan' : 'Add New Plan' }}</h3>
           
           <form @submit.prevent="savePlan" class="plan-form">
             <div class="form-row">
@@ -96,6 +98,22 @@
             </div>
           </form>
         </div>
+        
+        <!-- UPLOAD SECTION -->
+        <div class="settings-card upload-card" style="margin-top: 24px;">
+          <h3>Import Plan Event (SPO)</h3>
+          <p class="upload-desc">Upload <kbd>db_paramater plan.xlsx</kbd> to update Coal & OB SPO.</p>
+          <div class="upload-area">
+            <input type="file" id="spo-file-input" @change="handleFileUpload" accept=".xlsx" class="file-input" />
+            <button @click="submitUpload" :disabled="!uploadFile || isUploading" class="btn-primary" style="margin-top: 12px; width: 100%;">
+              {{ isUploading ? 'Uploading...' : 'Upload & Process' }}
+            </button>
+          </div>
+          <div v-if="uploadMessage" :class="['upload-msg', uploadError ? 'error-msg' : 'success-msg']">
+            {{ uploadMessage }}
+          </div>
+        </div>
+      </div>
 
         <!-- TABLE SECTION -->
         <div class="settings-card table-card">
@@ -189,6 +207,39 @@ const form = reactive({
   pa_target: 90.0,
   ua_target: 80.0
 });
+
+const uploadFile = ref(null);
+const isUploading = ref(false);
+const uploadMessage = ref('');
+const uploadError = ref(false);
+
+const handleFileUpload = (event) => {
+  uploadFile.value = event.target.files[0];
+};
+
+const submitUpload = async () => {
+  if (!uploadFile.value) return;
+  isUploading.value = true;
+  uploadMessage.value = '';
+  
+  const formData = new FormData();
+  formData.append('file', uploadFile.value);
+  
+  try {
+    const res = await apiClient.post('/settings/import-spo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    uploadError.value = false;
+    uploadMessage.value = `Success: ${res.data.message}. Coal: ${res.data.coal_rows_inserted} rows, OB: ${res.data.ob_rows_inserted} rows.`;
+    uploadFile.value = null;
+    document.getElementById('spo-file-input').value = '';
+  } catch (err) {
+    uploadError.value = true;
+    uploadMessage.value = err.response?.data?.detail || err.message;
+  } finally {
+    isUploading.value = false;
+  }
+};
 
 onMounted(() => {
   if (!isAuthenticated.value) {
@@ -418,6 +469,46 @@ const savePlan = async () => {
   color: #0f172a;
   border-bottom: 1px solid #e2e8f0;
   padding-bottom: 12px;
+}
+
+/* Upload Styles */
+.upload-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+.upload-desc kbd {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+.upload-area {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.file-input {
+  width: 100%;
+  font-size: 14px;
+}
+.upload-msg {
+  margin-top: 12px;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.success-msg {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+.error-msg {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 /* Form Styles */

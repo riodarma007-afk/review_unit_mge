@@ -298,8 +298,8 @@ const getBadgeColor = (code) => {
               <span class="kpi-suffix">%</span>
             </div>
             <div style="margin-top: 8px;">
-              <span class="kpi-badge" :class="getStatusClass(activeData.pa_percent || 0, 90)">
-                {{ (activeData.pa_percent || 0) >= 90 ? '↑ On Target' : '↓ Below Target' }}
+              <span class="kpi-badge" :class="getStatusClass(activeData.pa_percent || 0, summary?.targets?.pa || 90)">
+                {{ (activeData.pa_percent || 0) >= (summary?.targets?.pa || 90) ? '↑ On Target' : '↓ Below Target' }}
               </span>
             </div>
           </div>
@@ -327,8 +327,8 @@ const getBadgeColor = (code) => {
               <span class="kpi-suffix">%</span>
             </div>
             <div style="margin-top: 8px;">
-              <span class="kpi-badge" :class="getStatusClass(activeData.ua_percent || 0, 80)">
-                {{ (activeData.ua_percent || 0) >= 80 ? '↑ On Target' : '↓ Below Target' }}
+              <span class="kpi-badge" :class="getStatusClass(activeData.ua_percent || 0, summary?.targets?.ua || 80)">
+                {{ (activeData.ua_percent || 0) >= (summary?.targets?.ua || 80) ? '↑ On Target' : '↓ Below Target' }}
               </span>
             </div>
           </div>
