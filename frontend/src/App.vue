@@ -14,14 +14,7 @@ const showConnectingScreen = ref(true);
 const loadingProgress = ref(0);
 let progressInterval = null;
 
-watch(isBackendReady, (ready) => {
-  if (ready) {
-    loadingProgress.value = 100;
-    setTimeout(() => {
-      showConnectingScreen.value = false;
-    }, 2000); // Wait for look left/right animation
-  }
-});
+
 
 watch(currentView, (newView) => {
   window.location.hash = newView;
@@ -54,19 +47,24 @@ onMounted(async () => {
     return;
   }
 
-  // Fetch initial data once on app load
-  await filterStore.fetchOptions();
-  await kpiStore.fetchDashboardData();
+  loadingProgress.value = 100;
   
-  // Initialize first unit's specific data if available
-  if (kpiStore.unitPerformances && kpiStore.unitPerformances.length > 0) {
-    const firstUnit = kpiStore.unitPerformances[0].unit_code;
-    kpiStore.setCurrentUnit(firstUnit);
-    kpiStore.fetchFuelForUnit(firstUnit);
-    kpiStore.fetchHaulingForUnit(firstUnit);
-    kpiStore.fetchTransitForUnit(firstUnit);
-    kpiStore.fetchObForUnit(firstUnit);
-  }
+  // Start fetching data in the background while cat animates
+  filterStore.fetchOptions();
+  kpiStore.fetchDashboardData().then(() => {
+    if (kpiStore.unitPerformances && kpiStore.unitPerformances.length > 0) {
+      const firstUnit = kpiStore.unitPerformances[0].unit_code;
+      kpiStore.setCurrentUnit(firstUnit);
+      kpiStore.fetchFuelForUnit(firstUnit);
+      kpiStore.fetchHaulingForUnit(firstUnit);
+      kpiStore.fetchTransitForUnit(firstUnit);
+      kpiStore.fetchObForUnit(firstUnit);
+    }
+  });
+
+  setTimeout(() => {
+    showConnectingScreen.value = false;
+  }, 2000);
 });
 
 const retryConnection = async () => {
@@ -91,10 +89,9 @@ const retryConnection = async () => {
   }
   
   loadingProgress.value = 100;
-  setTimeout(async () => {
-    showConnectingScreen.value = false;
-    await filterStore.fetchOptions();
-    await kpiStore.fetchDashboardData();
+  
+  filterStore.fetchOptions();
+  kpiStore.fetchDashboardData().then(() => {
     if (kpiStore.unitPerformances && kpiStore.unitPerformances.length > 0) {
       const firstUnit = kpiStore.unitPerformances[0].unit_code;
       kpiStore.setCurrentUnit(firstUnit);
@@ -103,6 +100,10 @@ const retryConnection = async () => {
       kpiStore.fetchTransitForUnit(firstUnit);
       kpiStore.fetchObForUnit(firstUnit);
     }
+  });
+
+  setTimeout(() => {
+    showConnectingScreen.value = false;
   }, 2000);
 };
 
