@@ -78,12 +78,8 @@
   </div>
 </template>
 
-<script>
-const fuelCache = new Map();
-</script>
-
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import apiClient from '../../services/apiClient';
 
 const props = defineProps({
@@ -91,9 +87,14 @@ const props = defineProps({
     type: String,
     required: true
   },
-  dateFrom: String,
-  dateTo: String,
-  shift: String
+  fuelDataProp: {
+    type: Object,
+    default: () => null
+  },
+  haulingDataProp: {
+    type: Object,
+    default: () => null
+  }
 });
 
 const loading = ref(true);
@@ -121,42 +122,22 @@ const circlePercent = computed(() => {
 
 // Bar widths: scale proportionally
 const ratioBarWidth = computed(() => {
-  // KM/L typically 0.5 - 3.0, scale to 3 max
   return Math.min(100, (fuelData.value.ratio / 3) * 100) + '%';
 });
 
 const ltrTonBarWidth = computed(() => {
-  // LTR/TON typically 0.3 - 2.5, scale to 2.5 max
   return Math.min(100, (fuelData.value.ltr_ton / 2.5) * 100) + '%';
 });
 
 const sfcBarWidth = computed(() => {
-  // SFC typically 0.02 - 0.06, scale to 0.06 max
   return Math.min(100, (fuelData.value.sfc / 0.06) * 100) + '%';
 });
 
-const fetchFuelData = async () => {
-  const cacheKey = `${props.unitCode}-${props.dateFrom || ''}-${props.dateTo || ''}-${props.shift || ''}`;
-  if (fuelCache.has(cacheKey)) {
-    fuelData.value = fuelCache.get(cacheKey);
-    loading.value = false;
-    return;
-  }
-
+const calculateFuelData = async () => {
   loading.value = true;
   try {
-    const params = { unit_code: props.unitCode };
-    if (props.dateFrom) params.date_from = props.dateFrom;
-    if (props.dateTo) params.date_to = props.dateTo;
-    if (props.shift) params.shift = props.shift;
-
-    const [fuelRes, haulRes] = await Promise.all([
-      apiClient.get('/fuel/unit', { params }).catch(() => ({ data: {} })),
-      apiClient.get('/hauling/unit', { params }).catch(() => ({ data: {} }))
-    ]);
-    
-    let fData = fuelRes.data || {};
-    const hData = haulRes.data || {};
+    let fData = props.fuelDataProp || {};
+    const hData = props.haulingDataProp || {};
     
     const totalLiters = fData.total_liters || 0;
     let totalTon = hData.total_tonage || 0;
@@ -233,17 +214,15 @@ const fetchFuelData = async () => {
       sfc: sfc,
       isGoodSfc: isGoodSfc
     };
-    
-    fuelCache.set(cacheKey, fuelData.value);
   } catch (error) {
-    console.error('Failed to fetch fuel popup data:', error);
+    console.error('Failed to calculate fuel popup data:', error);
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(fetchFuelData);
-watch(() => props.unitCode, fetchFuelData);
+onMounted(calculateFuelData);
+watch(() => [props.fuelDataProp, props.haulingDataProp, props.unitCode], calculateFuelData, { deep: true });
 </script>
 
 <style scoped>

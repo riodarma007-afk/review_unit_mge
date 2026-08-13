@@ -120,7 +120,7 @@
               <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.fuel || 0).toFixed(1) }}</span>
               
-              <FuelPopup v-if="hoveredFuelUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup fuel-pos" />
+              <FuelPopup v-if="hoveredFuelUnit === unit.unit_code" :unit-code="unit.unit_code" :fuel-data-prop="unitExtraData[unit.unit_code]?.rawFuelData" :hauling-data-prop="unitExtraData[unit.unit_code]?.rawHaulingData" class="absolute-popup fuel-pos" />
             </td>
             
             <!-- KM / L -->
@@ -187,7 +187,7 @@ const fetchExtraData = async () => {
       await Promise.all(batch.map(async (unit) => {
         const code = unit.unit_code;
         if (!unitExtraData.value[code]) {
-          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, ritpiday: 0, fuel: 0, ratio: 0 };
+          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, ritpiday: 0, fuel: 0, ratio: 0, rawFuelData: null, rawHaulingData: null };
         }
         if (!loadingStates.value[code]) {
           loadingStates.value[code] = { hauling: true, fuel: true, transit: true, ob: true };
@@ -210,6 +210,7 @@ const fetchExtraData = async () => {
           ]);
 
           if (haulingRes.status === 'fulfilled') {
+            unitExtraData.value[code].rawHaulingData = haulingRes.value.data;
             unitExtraData.value[code].hauling = haulingRes.value.data?.total_tonage || 0;
             unitExtraData.value[code].payload = haulingRes.value.data?.avg_payload || 0;
             unitExtraData.value[code].load_time = haulingRes.value.data?.avg_loading_time || 0;
@@ -222,6 +223,7 @@ const fetchExtraData = async () => {
             unitExtraData.value[code].ob = obRes.value.data?.total_bcm || 0;
           }
           if (fuelRes.status === 'fulfilled') {
+            unitExtraData.value[code].rawFuelData = fuelRes.value.data;
             unitExtraData.value[code].fuel = fuelRes.value.data?.total_liters || 0;
             unitExtraData.value[code].ratio = fuelRes.value.data?.average_km_per_liter || 0;
           }
