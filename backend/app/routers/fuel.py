@@ -56,7 +56,8 @@ async def _fetch_fuel_pages(params: dict) -> list:
             total_pages = body.get("meta", {}).get("totalPages", 1)
         except Exception as e:
             print(f"Failed to fetch fuel data page 1: {e}")
-            return []
+            all_rows = []
+            total_pages = 1
 
         # Fetch remaining pages concurrently
         if total_pages > 1:
@@ -103,7 +104,7 @@ async def get_fuel_by_unit(
 
     fuel_unit_code = optrack_to_fuel(unit_code)
 
-    params = {"search": fuel_unit_code}
+    params = {}
     if date_from:
         params["date_from"] = date_from
     if date_to:

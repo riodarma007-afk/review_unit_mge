@@ -36,7 +36,8 @@ async def _fetch_pages(endpoint: str, params: dict) -> list:
             total_pages = body.get("meta", {}).get("totalPages", 1)
         except Exception as e:
             print(f"Failed to fetch {endpoint} data page 1: {e}")
-            return []
+            all_rows = []
+            total_pages = 1
 
         if total_pages > 1:
             async def fetch_page(p):
@@ -74,7 +75,7 @@ async def get_ob_by_unit(
         if time.time() - cached_time < CACHE_TTL:
             return cached_result
     
-    params = {"search": unit_code}
+    params = {}
     if date_from:
         params["date_from"] = date_from
     if date_to:

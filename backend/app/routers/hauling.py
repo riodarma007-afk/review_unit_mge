@@ -42,7 +42,8 @@ async def _fetch_hauling_pages(params: dict) -> list:
             total_pages = body.get("meta", {}).get("totalPages", 1)
         except Exception as e:
             print(f"Failed to fetch hauling data page 1: {e}")
-            return []
+            all_rows = []
+            total_pages = 1
 
         # Fetch remaining pages concurrently
         if total_pages > 1:
@@ -85,7 +86,7 @@ async def get_hauling_by_unit(
         if time.time() - cached_time < CACHE_TTL:
             return cached_result
     
-    params = {"search": unit_code}
+    params = {}
     if date_from:
         params["date_from"] = date_from
     if date_to:
