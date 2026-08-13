@@ -203,3 +203,79 @@ class OptrackRepository:
     def get_events_df(self, **filters):
         """Alias for backward compatibility - returns list of dicts"""
         return self.get_events(**filters)
+
+    # --- TARGET SETTINGS CRUD ---
+    def get_target_settings(self, **filters) -> List[Dict[str, Any]]:
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                query = "SELECT * FROM Optrack_target_settings"
+                conditions = []
+                params = {}
+                
+                if filters.get('activity'):
+                    conditions.append("activity = %(activity)s")
+                    params['activity'] = filters['activity']
+                if filters.get('pit'):
+                    conditions.append("pit = %(pit)s")
+                    params['pit'] = filters['pit']
+                if filters.get('year'):
+                    conditions.append("year = %(year)s")
+                    params['year'] = filters['year']
+                if filters.get('month'):
+                    conditions.append("month = %(month)s")
+                    params['month'] = filters['month']
+                    
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                
+                query += " ORDER BY year DESC, month DESC"
+                
+                cursor.execute(query, params)
+                return cursor.fetchall()
+        finally:
+            conn.close()
+
+    def create_target_setting(self, setting_data: Dict[str, Any]) -> int:
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                query = """
+                    INSERT INTO Optrack_target_settings 
+                    (activity, pit, year, month, pa_target, ua_target) 
+                    VALUES 
+                    (%(activity)s, %(pit)s, %(year)s, %(month)s, %(pa_target)s, %(ua_target)s)
+                """
+                cursor.execute(query, setting_data)
+                conn.commit()
+                return cursor.lastrowid
+        finally:
+            conn.close()
+
+    def update_target_setting(self, setting_id: int, setting_data: Dict[str, Any]) -> bool:
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                query = """
+                    UPDATE Optrack_target_settings 
+                    SET activity = %(activity)s, pit = %(pit)s, year = %(year)s, 
+                        month = %(month)s, pa_target = %(pa_target)s, ua_target = %(ua_target)s
+                    WHERE id = %(id)s
+                """
+                setting_data['id'] = setting_id
+                cursor.execute(query, setting_data)
+                conn.commit()
+                return cursor.rowcount > 0
+        finally:
+            conn.close()
+
+    def delete_target_setting(self, setting_id: int) -> bool:
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                query = "DELETE FROM Optrack_target_settings WHERE id = %s"
+                cursor.execute(query, (setting_id,))
+                conn.commit()
+                return cursor.rowcount > 0
+        finally:
+            conn.close()

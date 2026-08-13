@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
-from app.routers import kpi, units, events, filters, fuel, hauling, transit, ob
+from app.routers import kpi, units, events, filters, fuel, hauling, transit, ob, settings as target_settings
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -28,6 +28,7 @@ app.include_router(fuel.router, prefix="/api/v1/fuel", tags=["fuel"])
 app.include_router(hauling.router, prefix="/api/v1/hauling", tags=["hauling"])
 app.include_router(transit.router, prefix="/api/v1/transit", tags=["transit"])
 app.include_router(ob.router, prefix="/api/v1/ob", tags=["ob"])
+app.include_router(target_settings.router, prefix="/api/v1/settings", tags=["settings"])
 
 @app.get("/health")
 def health_check():

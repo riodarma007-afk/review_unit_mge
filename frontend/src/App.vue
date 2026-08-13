@@ -5,10 +5,11 @@ import { useFilterStore } from './stores/filterStore';
 import { waitForBackend, isBackendReady, connectionAttempt } from './services/apiClient';
 import OverviewView from './views/OverviewView.vue';
 import TableView from './views/TableView.vue';
+import SettingsView from './views/SettingsView.vue';
 import GlobalFilterBar from './components/common/GlobalFilterBar.vue';
 
 const initialView = window.location.hash.replace('#', '') || 'overview';
-const currentView = ref(['overview', 'matrix'].includes(initialView) ? initialView : 'overview');
+const currentView = ref(['overview', 'matrix', 'settings'].includes(initialView) ? initialView : 'overview');
 const connectionFailed = ref(false);
 const showConnectingScreen = ref(true);
 const loadingProgress = ref(0);
@@ -23,7 +24,7 @@ watch(currentView, (newView) => {
 onMounted(async () => {
   window.addEventListener('hashchange', () => {
     const hashView = window.location.hash.replace('#', '');
-    if (['overview', 'matrix'].includes(hashView)) {
+    if (['overview', 'matrix', 'settings'].includes(hashView)) {
       currentView.value = hashView;
     }
   });
@@ -292,6 +293,10 @@ const lastUpdatedText = computed(() => {
           <span class="live-dot"></span>
           <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500; white-space: nowrap;">Updated {{ lastUpdatedText }}</span>
         </div>
+        
+        <button class="nav-tab" :class="{ active: currentView === 'settings' }" @click="currentView = 'settings'" style="padding: 6px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--text-secondary);" title="Settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
         <div style="height: 16px; display: flex; align-items: center; margin-left: 12px; margin-right: 12px;">
           <img :src="`${assetBase}planning_dept_logo.png`" alt="Planning Dept" style="height: 100%; width: auto; object-fit: contain;" />
         </div>
@@ -300,11 +305,12 @@ const lastUpdatedText = computed(() => {
       </div>
     </nav>
     
-    <!-- Main Content -->
-    <GlobalFilterBar />
-    <main>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <GlobalFilterBar v-if="currentView !== 'settings'" />
       <OverviewView v-if="currentView === 'overview'" />
       <TableView v-else-if="currentView === 'matrix'" />
+      <SettingsView v-else-if="currentView === 'settings'" />
     </main>
   </template>
 </template>

@@ -1,6 +1,20 @@
 from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from app.core.database import Base
+
+class TargetSetting(Base):
+    __tablename__ = "Optrack_target_settings"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    activity = Column(String(50), index=True) # "Coal", "OB", "Transit", "Hauling", "All"
+    pit = Column(String(50), index=True) # "Jetty", "North JO GAM", "All"
+    year = Column(Integer, index=True)
+    month = Column(Integer, index=True)
+    week = Column(Integer, index=True) # 1, 2, 3, 4, 5
+    pa_target = Column(Float)
+    ua_target = Column(Float)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class DataUtama(Base):
     __tablename__ = "Optrack_data_event"
