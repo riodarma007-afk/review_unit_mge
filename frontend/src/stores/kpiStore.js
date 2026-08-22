@@ -30,6 +30,7 @@ export const useKpiStore = defineStore('kpi', {
   actions: {
     async fetchDashboardData() {
       const filterStore = useFilterStore();
+      filterStore.checkAndUpdateAutoDate();
       const params = filterStore.getQueryParams();
       
       this.isLoading = true;
@@ -87,6 +88,7 @@ export const useKpiStore = defineStore('kpi', {
     // Silent refresh (no cache clear, just re-fetch)
     async silentRefresh() {
       const filterStore = useFilterStore();
+      filterStore.checkAndUpdateAutoDate();
       const params = filterStore.getQueryParams();
       
       try {
