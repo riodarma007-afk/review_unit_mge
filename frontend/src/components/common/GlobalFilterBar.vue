@@ -1,5 +1,5 @@
 <template>
-  <div v-show="filterStore.showFilters" class="card row filter-card" style="padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; margin-top: 1.5rem; max-width: 1400px; margin-left: auto; margin-right: auto;">
+  <div v-show="filterStore.showFilters" class="card row filter-card" style="padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; margin-top: 1.5rem; max-width: 100%; margin-left: auto; margin-right: auto; width: calc(100% - 4rem);">
     <div class="filter-bar-inline" @focusin="kpiStore.stopAutoRefresh()" @focusout="kpiStore.startAutoRefresh()">
       <div class="filter-group">
         <label>Date From</label>

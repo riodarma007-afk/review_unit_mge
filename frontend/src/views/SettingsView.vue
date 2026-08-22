@@ -341,7 +341,7 @@ const savePlan = async () => {
 <style scoped>
 .settings-page {
   padding: 24px;
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
   color: var(--text-primary);
 }
