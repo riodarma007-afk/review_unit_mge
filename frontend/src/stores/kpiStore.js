@@ -25,6 +25,7 @@ export const useKpiStore = defineStore('kpi', {
     autoRefreshInterval: 60, // seconds
     _autoRefreshTimer: null,
     _currentUnitCode: null, // track which unit is currently selected
+    isCarouselPaused: false,
   }),
   actions: {
     async fetchDashboardData() {

@@ -288,6 +288,17 @@ const lastUpdatedText = computed(() => {
           <span>Data Tanggal: {{ activeDateText }}</span>
         </div>
 
+        <!-- Pause Slide Toggle -->
+        <button v-if="currentView === 'overview'" 
+                @click="kpiStore.isCarouselPaused = !kpiStore.isCarouselPaused"
+                :title="kpiStore.isCarouselPaused ? 'Resume Slide' : 'Pause Slide'"
+                style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; color: #475569; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
+                onmouseover="this.style.background='#f1f5f9'; this.style.color='#0f172a'; this.style.borderColor='#cbd5e1'"
+                onmouseout="this.style.background='#ffffff'; this.style.color='#475569'; this.style.borderColor='#e2e8f0'">
+          <svg v-if="!kpiStore.isCarouselPaused" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+
         <!-- Live Indicator -->
         <div class="live-indicator" v-if="kpiStore.autoRefreshEnabled" title="Data is being refreshed automatically">
           <span class="live-dot"></span>

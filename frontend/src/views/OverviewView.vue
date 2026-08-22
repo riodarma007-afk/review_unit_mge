@@ -90,7 +90,6 @@ const handleForceRefresh = async () => {
 
 // State for currently selected unit in Carousel
 const selectedUnit = ref(null);
-const isCarouselPaused = ref(false);
 const activeData = computed(() => {
   if (selectedUnit.value && Object.keys(selectedUnit.value).length > 0) return selectedUnit.value;
   if (unitPerfs.value && unitPerfs.value.length > 0) return unitPerfs.value[0];
@@ -261,13 +260,6 @@ const getBadgeColor = (code) => {
 
 <template>
   <div class="page-wrapper animate-in">
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-      <button class="btn btn-outline" @click="isCarouselPaused = !isCarouselPaused" :title="isCarouselPaused ? 'Resume Slide' : 'Pause Slide'">
-        <svg v-if="!isCarouselPaused" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        {{ isCarouselPaused ? 'Resume Slide' : 'Pause Slide' }}
-      </button>
-    </div>
 
     <!-- Loading State -->
     <div v-if="kpiStore.isLoading && unitPerfs.length === 0" class="loading-state">
@@ -475,7 +467,7 @@ const getBadgeColor = (code) => {
         <div class="grid-3" style="align-items: stretch; margin: 0; padding: 0; width: 100%; gap: 0;">
           <!-- Unit Carousel -->
           <div style="grid-column: span 2; display: flex;">
-            <UnitPerformanceCarousel :units="unitPerfs" :intervalMs="15000" :paused="isCarouselPaused" @update:unit="onUnitChange" style="width: 100%;" />
+            <UnitPerformanceCarousel :units="unitPerfs" :intervalMs="15000" :paused="kpiStore.isCarouselPaused" @update:unit="onUnitChange" style="width: 100%;" />
           </div>
 
           <!-- Unit Event Bar Chart -->
