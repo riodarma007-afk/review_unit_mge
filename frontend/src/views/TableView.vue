@@ -700,8 +700,7 @@ const sortedUnits = computed(() => {
   
   .absolute-popup {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    top: -10px; /* Shift slightly up so the arrow aligns with cell center */
     z-index: 9999;
     filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.2));
   }
@@ -710,8 +709,7 @@ const sortedUnits = computed(() => {
   .absolute-popup::before {
     content: '';
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 24px; /* Position arrow near the top of the popup */
     border-width: 8px;
     border-style: solid;
     border-color: transparent;
@@ -742,11 +740,11 @@ const sortedUnits = computed(() => {
   }
   .popup-fade-enter-from {
     opacity: 0;
-    transform: translateY(-50%) scale(0.9);
+    transform: translateX(-10px) scale(0.95);
   }
   .popup-fade-leave-to {
     opacity: 0;
-    transform: translateY(-50%) scale(0.95);
+    transform: translateX(-10px) scale(0.95);
   }
 
   /* Active Cell Highlight */
