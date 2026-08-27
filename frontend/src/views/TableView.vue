@@ -168,12 +168,12 @@ const hoveredObUnit = ref(null);
 const tableWrapperRef = ref(null);
 const rowRefs = ref({});
 const autoHighlightIndex = ref(-1);
-const autoHighlightColumnIndex = ref(0);
+const autoHighlightColumnIndex = ref(-1);
 const isUserInteracting = ref(false);
-let autoScrollTimer = null;
+let autoAnimationTimer = null;
 let mouseIdleTimer = null;
-let rowAnimationTimer = null;
-const AUTO_SCROLL_INTERVAL = 5000; // 5s per column popup
+const POPUP_INTERVAL = 4000; // 4s per column popup
+const ROW_SLIDE_INTERVAL = 800; // 800ms for row slide before first popup
 const MOUSE_IDLE_TIMEOUT = 5000; // resume after 5s idle
 
 const popupTypes = ['delay', 'hauling', 'transit', 'ob', 'fuel'];
@@ -189,67 +189,58 @@ const isAutoHover = (unitCode, type, rowIndex) => {
   return popupTypes[autoHighlightColumnIndex.value] === type;
 };
 
-const startRowEntranceAnimation = () => {
-  stopAutoScroll();
-  if (rowAnimationTimer) clearInterval(rowAnimationTimer);
-  
+const startCombinedAnimation = () => {
+  stopAnimations();
+  isUserInteracting.value = false;
   visibleUnitsCount.value = 0;
+  autoHighlightIndex.value = -1;
+  autoHighlightColumnIndex.value = -1;
+  
+  if (sortedUnits.value && sortedUnits.value.length > 0) {
+    stepAnimation();
+  }
+};
+
+const stopAnimations = () => {
+  if (autoAnimationTimer) clearTimeout(autoAnimationTimer);
+  autoAnimationTimer = null;
+};
+
+const stepAnimation = () => {
+  if (isUserInteracting.value) return;
+
   const totalRows = sortedUnits.value?.length || 0;
   
-  if (totalRows === 0) return;
-
-  rowAnimationTimer = setInterval(() => {
-    if (visibleUnitsCount.value < totalRows) {
-      visibleUnitsCount.value++;
-      
-      // Auto scroll downwards to show the newly added row
-      nextTick(() => {
-        if (tableWrapperRef.value) {
-          tableWrapperRef.value.scrollTop = tableWrapperRef.value.scrollHeight;
-        }
-      });
-    } else {
-      // Finished adding all rows
-      clearInterval(rowAnimationTimer);
-      rowAnimationTimer = null;
-      
-      // Now start the popup cycle animation
-      setTimeout(() => startAutoScroll(), 1000);
+  // If we haven't added any rows yet, or we finished the current row's popups
+  if (visibleUnitsCount.value === 0 || autoHighlightColumnIndex.value >= popupTypes.length - 1) {
+    // Move to next row
+    if (visibleUnitsCount.value >= totalRows) {
+      // Reached the end, restart from beginning
+      startCombinedAnimation();
+      return;
     }
-  }, 200); // Add one row every 200ms
-};
-
-const startAutoScroll = () => {
-  stopAutoScroll();
-  if (rowAnimationTimer) return; // Wait for entrance animation to finish
-  isUserInteracting.value = false;
-  
-  autoScrollTimer = setInterval(() => {
-    const totalRows = sortedUnits.value?.length || 0;
-    if (totalRows === 0) return;
     
+    // Slide in the next row
+    visibleUnitsCount.value++;
+    autoHighlightIndex.value = visibleUnitsCount.value - 1;
+    autoHighlightColumnIndex.value = -1; // hide popups temporarily
+    
+    // Auto scroll downwards to show the newly added row
+    nextTick(() => {
+      const row = rowRefs.value[autoHighlightIndex.value];
+      if (row && tableWrapperRef.value) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    // Wait for row slide-in animation to finish, then show first popup
+    autoAnimationTimer = setTimeout(stepAnimation, ROW_SLIDE_INTERVAL);
+  } else {
+    // Move to next popup in the current row
     autoHighlightColumnIndex.value++;
     
-    // If finished all columns for this row, move to next row
-    if (autoHighlightColumnIndex.value >= popupTypes.length) {
-      autoHighlightColumnIndex.value = 0;
-      autoHighlightIndex.value = (autoHighlightIndex.value + 1) % totalRows;
-      
-      // Scroll to keep highlighted row visible
-      nextTick(() => {
-        const row = rowRefs.value[autoHighlightIndex.value];
-        if (row && tableWrapperRef.value) {
-          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-    }
-  }, AUTO_SCROLL_INTERVAL);
-};
-
-const stopAutoScroll = () => {
-  if (autoScrollTimer) {
-    clearInterval(autoScrollTimer);
-    autoScrollTimer = null;
+    // Wait for user to read the popup
+    autoAnimationTimer = setTimeout(stepAnimation, POPUP_INTERVAL);
   }
 };
 
@@ -257,34 +248,30 @@ const onMouseActivity = () => {
   // Pause auto-scroll when user interacts
   isUserInteracting.value = true;
   autoHighlightIndex.value = -1;
-  stopAutoScroll();
+  autoHighlightColumnIndex.value = -1;
+  stopAnimations();
   
-  // If entrance animation was running, complete it instantly
-  if (rowAnimationTimer) {
-    clearInterval(rowAnimationTimer);
-    rowAnimationTimer = null;
-    visibleUnitsCount.value = sortedUnits.value?.length || 0;
-  }
+  // Show all rows instantly
+  visibleUnitsCount.value = sortedUnits.value?.length || 0;
   
   // Reset idle timer
   if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
   mouseIdleTimer = setTimeout(() => {
-    // Mouse has been idle for 5s, resume auto-scroll
+    // Mouse has been idle for 5s, restart the whole cycle
     isUserInteracting.value = false;
-    startAutoScroll();
+    startCombinedAnimation();
   }, MOUSE_IDLE_TIMEOUT);
 };
 
 // Start auto-scroll when data is available
 watch(() => kpiStore.unitPerformances, (newVal) => {
-  if (newVal && newVal.length > 0 && !autoScrollTimer && !rowAnimationTimer && !isUserInteracting.value) {
-    setTimeout(() => startRowEntranceAnimation(), 500);
+  if (newVal && newVal.length > 0 && !autoAnimationTimer && !isUserInteracting.value) {
+    setTimeout(() => startCombinedAnimation(), 500);
   }
 }, { immediate: true });
 
 onUnmounted(() => {
-  stopAutoScroll();
-  if (rowAnimationTimer) clearInterval(rowAnimationTimer);
+  stopAnimations();
   if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
 });
 
