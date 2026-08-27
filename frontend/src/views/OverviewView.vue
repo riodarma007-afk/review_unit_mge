@@ -180,139 +180,10 @@ const bottomUnits = computed(() => {
     .slice(0, 5);
 });
 
-// Fuel & Productivity formatting
-const fmt = (val) => {
-  if (val === null || val === undefined) return '0.0';
-  return Number(val).toFixed(1);
+const fmt = (v) => {
+  if (v === null || v === undefined || isNaN(v)) return '--';
+  return Number(v).toFixed(1);
 };
-
-// --- Modern ApexChart for Unit Event (Pareto) ---
-const paretoChartSeries = computed(() => {
-  const items = activeData.value?.events_pareto?.items || [];
-  const chartData = items.slice(0, 10).map(item => {
-    const act = item.hours || 0;
-    const plan = item.plan_hours || 0;
-    const isExceeded = plan > 0 && act > plan;
-    
-    const dataObj = {
-      x: item.status,
-      y: parseFloat(act.toFixed(2)),
-      fillColor: isExceeded ? '#ef4444' : '#3b82f6', // Red if exceeded, Blue if OK
-    };
-
-    if (plan > 0) {
-      dataObj.goals = [
-        {
-          name: 'Plan',
-          value: parseFloat(plan.toFixed(2)),
-          strokeHeight: 18,
-          strokeWidth: 3,
-          strokeColor: '#f97316', // bright orange
-        }
-      ];
-    }
-    return dataObj;
-  });
-
-  return [
-    {
-      name: 'Actual Hours',
-      data: chartData
-    }
-  ];
-});
-
-const paretoChartOptions = computed(() => {
-  return {
-    chart: {
-      type: 'bar',
-      toolbar: { show: false },
-      fontFamily: 'Inter, sans-serif',
-      animations: {
-        enabled: true,
-        easing: 'easeinout',
-        speed: 800,
-      }
-    },
-    plotOptions: {
-      bar: {
-        horizontal: true,
-        borderRadius: 4,
-        barHeight: '55%',
-        dataLabels: {
-          position: 'top', // 'top' in horizontal means right end
-        }
-      }
-    },
-    colors: ['#3b82f6'],
-    dataLabels: {
-      enabled: true,
-      textAnchor: 'start',
-      offsetX: 5,
-      formatter: function (val) {
-        return val + 'h';
-      },
-      style: {
-        fontSize: '11px',
-        fontWeight: 600,
-        colors: ['#0f172a']
-      }
-    },
-    xaxis: {
-      labels: {
-        formatter: function (val) {
-          return val + 'h'; // Numeric bottom axis
-        }
-      }
-    },
-    yaxis: {
-      labels: {
-        style: {
-          fontSize: '11px',
-          fontWeight: 500,
-          colors: ['#475569']
-        }
-      }
-    },
-    tooltip: {
-      shared: true,
-      intersect: false,
-      custom: function({series, seriesIndex, dataPointIndex, w}) {
-        const data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-        const act = data.y;
-        const plan = data.goals && data.goals.length ? data.goals[0].value : 0;
-        const name = data.x;
-        
-        let gapHtml = '';
-        if (plan > 0) {
-          const gap = (act - plan).toFixed(2);
-          if (act > plan) {
-            gapHtml = `<div style="margin-top: 6px; font-weight: bold; color: #ef4444;">Gap: Over by ${gap}h ⚠️</div>`;
-          } else {
-            gapHtml = `<div style="margin-top: 6px; font-weight: bold; color: #10b981;">Gap: Under by ${Math.abs(gap)}h ✅</div>`;
-          }
-        }
-        
-        let planHtml = plan > 0 ? `<div>Plan: <b>${plan}h</b></div>` : '';
-        
-        return `
-          <div style="padding: 12px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); background: white;">
-            <div style="font-weight: 600; margin-bottom: 8px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">${name}</div>
-            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px;">
-              <div>Actual: <b style="color: ${data.fillColor}">${act}h</b></div>
-              ${planHtml}
-              ${gapHtml}
-            </div>
-          </div>
-        `;
-      }
-    },
-    grid: {
-      borderColor: '#f1f5f9',
-      strokeDashArray: 4,
-    }
-  };
-});
 
 const fmtInt = (v) => {
   if (v === null || v === undefined || isNaN(v)) return '0';
@@ -602,9 +473,36 @@ const getBadgeColor = (code) => {
           <!-- Unit Event Bar Chart -->
           <div style="display: flex; flex-direction: column; height: 100%; padding: 1.25rem; grid-column: span 1;">
             
-            <h3 style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0; text-transform: uppercase;">Top Delays</h3>
-            <div v-if="activeData.events_pareto?.items?.length" style="flex: 1; width: 100%; min-height: 250px;">
-              <apexchart type="bar" height="100%" :options="paretoChartOptions" :series="paretoChartSeries"></apexchart>
+            <div v-if="activeData.events_pareto?.items?.length" class="event-pareto-list" style="flex: 1; padding-top: 1rem;">
+              <div v-for="(item, idx) in activeData.events_pareto.items.slice(0, 10)" :key="idx" class="modern-pareto-item">
+                <div class="modern-pareto-header">
+                  <span class="modern-pareto-name">{{ item.status }}</span>
+                  <div class="modern-pareto-labels-clean">
+                    <span class="subtle-label">Act:</span>
+                    <span class="clean-actual-val" :class="{ 'is-exceeded': item.plan_hours > 0 && item.hours > item.plan_hours }">
+                      <SmoothCounter :value="item.hours" :decimals="2"/>h
+                    </span>
+                    <span v-if="item.plan_hours > 0" class="clean-plan-val">
+                      <span class="divider">|</span>
+                      <span class="subtle-label">Plan:</span>
+                      <span class="target">{{ Number(item.plan_hours).toFixed(2) }}h</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="modern-pareto-track">
+                  <!-- Optional: background zone up to plan -->
+                  <div v-if="item.plan_hours > 0" class="modern-target-zone" :style="{ width: Math.min(item.plan_hours / activeData.events_pareto.items[0].hours * 100, 100) + '%' }"></div>
+                  
+                  <div class="modern-pareto-fill" 
+                       :class="{ 'is-exceeded': item.plan_hours > 0 && item.hours > item.plan_hours }" 
+                       :style="{ width: (item.hours / activeData.events_pareto.items[0].hours * 100) + '%' }">
+                  </div>
+                  
+                  <div v-if="item.plan_hours > 0" class="modern-target-marker" :style="{ left: Math.min(item.plan_hours / activeData.events_pareto.items[0].hours * 100, 100) + '%' }">
+                    <div class="marker-line"></div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div v-else style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem;">
               No delay/breakdown events for this unit.
