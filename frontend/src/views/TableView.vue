@@ -463,7 +463,7 @@ const sortedUnits = computed(() => {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  margin-bottom: 12rem; /* Add space so last rows can scroll up, avoiding popup cutoff */
+  margin-bottom: 400px; /* Large space so last rows can scroll to center, avoiding popup cutoff */
 }
 
 .modern-table th, .modern-table td {
