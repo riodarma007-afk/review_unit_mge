@@ -79,7 +79,7 @@
                 </div>
               <span v-else class="text-xs text-gray-400">-</span>
               
-              <TopDelayPopup v-if="hoveredDelayUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <TopDelayPopup v-if="hoveredDelayUnit === unit.unit_code || isAutoHover(unit.unit_code, 'delay', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
             </td>
 
             <!-- Hauling Production -->
@@ -87,7 +87,7 @@
               <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.hauling || 0).toFixed(1) }}</span>
               
-              <HaulingPopup v-if="hoveredHaulingUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <HaulingPopup v-if="hoveredHaulingUnit === unit.unit_code || isAutoHover(unit.unit_code, 'hauling', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
             </td>
 
             <!-- Transit Production -->
@@ -95,7 +95,7 @@
               <span v-if="loadingStates[unit.unit_code]?.transit" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.transit || 0).toFixed(1) }}</span>
               
-              <TransitPopup v-if="hoveredTransitUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <TransitPopup v-if="hoveredTransitUnit === unit.unit_code || isAutoHover(unit.unit_code, 'transit', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
             </td>
 
             <!-- OB Production -->
@@ -103,7 +103,7 @@
               <span v-if="loadingStates[unit.unit_code]?.ob" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.ob || 0).toFixed(1) }}</span>
               
-              <ObPopup v-if="hoveredObUnit === unit.unit_code" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <ObPopup v-if="hoveredObUnit === unit.unit_code || isAutoHover(unit.unit_code, 'ob', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
             </td>
             
             <!-- Payload -->
@@ -123,7 +123,7 @@
               <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.fuel || 0).toFixed(1) }}</span>
               
-              <FuelPopup v-if="hoveredFuelUnit === unit.unit_code" :unit-code="unit.unit_code" :fuel-data-prop="unitExtraData[unit.unit_code]?.rawFuelData" :hauling-data-prop="unitExtraData[unit.unit_code]?.rawHaulingData" class="absolute-popup fuel-pos" />
+              <FuelPopup v-if="hoveredFuelUnit === unit.unit_code || isAutoHover(unit.unit_code, 'fuel', index)" :unit-code="unit.unit_code" :fuel-data-prop="unitExtraData[unit.unit_code]?.rawFuelData" :hauling-data-prop="unitExtraData[unit.unit_code]?.rawHaulingData" class="absolute-popup fuel-pos" />
             </td>
             
           </tr>
@@ -132,6 +132,11 @@
           </tr>
         </tbody>
       </table>
+    </div>
+    <!-- Auto-scroll status indicator -->
+    <div class="auto-scroll-badge" :class="{ active: !isUserInteracting && autoHighlightIndex >= 0, paused: isUserInteracting }">
+      <span v-if="!isUserInteracting && autoHighlightIndex >= 0">▶ Auto Slide {{ autoHighlightIndex + 1 }}/{{ sortedUnits?.length || 0 }}</span>
+      <span v-else>⏸ Paused — diam 5 detik untuk lanjut</span>
     </div>
   </div>
 </template>
@@ -163,28 +168,44 @@ const hoveredObUnit = ref(null);
 const tableWrapperRef = ref(null);
 const rowRefs = ref({});
 const autoHighlightIndex = ref(-1);
+const autoHighlightColumnIndex = ref(0);
 const isUserInteracting = ref(false);
 let autoScrollTimer = null;
 let mouseIdleTimer = null;
-const AUTO_SCROLL_INTERVAL = 3000; // 3s per row
+const AUTO_SCROLL_INTERVAL = 3000; // 3s per column popup
 const MOUSE_IDLE_TIMEOUT = 5000; // resume after 5s idle
+
+const popupTypes = ['delay', 'hauling', 'transit', 'ob', 'fuel'];
+
+const isAutoHover = (unitCode, type, rowIndex) => {
+  if (isUserInteracting.value) return false;
+  if (autoHighlightIndex.value !== rowIndex) return false;
+  return popupTypes[autoHighlightColumnIndex.value] === type;
+};
 
 const startAutoScroll = () => {
   stopAutoScroll();
   isUserInteracting.value = false;
+  
   autoScrollTimer = setInterval(() => {
     const totalRows = sortedUnits.value?.length || 0;
     if (totalRows === 0) return;
     
-    autoHighlightIndex.value = (autoHighlightIndex.value + 1) % totalRows;
+    autoHighlightColumnIndex.value++;
     
-    // Scroll to keep highlighted row visible
-    nextTick(() => {
-      const row = rowRefs.value[autoHighlightIndex.value];
-      if (row && tableWrapperRef.value) {
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
+    // If finished all columns for this row, move to next row
+    if (autoHighlightColumnIndex.value >= popupTypes.length) {
+      autoHighlightColumnIndex.value = 0;
+      autoHighlightIndex.value = (autoHighlightIndex.value + 1) % totalRows;
+      
+      // Scroll to keep highlighted row visible
+      nextTick(() => {
+        const row = rowRefs.value[autoHighlightIndex.value];
+        if (row && tableWrapperRef.value) {
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }
   }, AUTO_SCROLL_INTERVAL);
 };
 
@@ -209,10 +230,12 @@ const onMouseActivity = () => {
   }, MOUSE_IDLE_TIMEOUT);
 };
 
-onMounted(() => {
-  // Start auto-scroll after a short delay to let data load
-  setTimeout(() => startAutoScroll(), 2000);
-});
+// Start auto-scroll when data is available
+watch(() => kpiStore.unitPerformances, (newVal) => {
+  if (newVal && newVal.length > 0 && !autoScrollTimer && !isUserInteracting.value) {
+    setTimeout(() => startAutoScroll(), 1000);
+  }
+}, { immediate: true });
 
 onUnmounted(() => {
   stopAutoScroll();
@@ -631,5 +654,30 @@ const sortedUnits = computed(() => {
   .fuel-pos {
     right: 100%;
     margin-right: 10px;
+  }
+
+  /* Auto-scroll badge */
+  .auto-scroll-badge {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  .auto-scroll-badge.active {
+    background: rgba(99, 102, 241, 0.9);
+    color: white;
+  }
+
+  .auto-scroll-badge.paused {
+    background: rgba(100, 116, 139, 0.8);
+    color: #e2e8f0;
   }
 </style>
