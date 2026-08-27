@@ -9,7 +9,7 @@ export const connectionAttempt = ref(0);
 
 const apiClient = axios.create({
   baseURL: baseURL,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
