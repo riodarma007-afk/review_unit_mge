@@ -29,8 +29,8 @@
             <th class="sortable" @click="sortBy('fuel')"><div class="th-content"><Fuel class="icon" /> Fuel (L)<span v-if="sortKey === 'fuel'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="(unit, index) in sortedUnits" :key="unit.unit_code"
+        <transition-group name="slide-row" tag="tbody">
+          <tr v-for="(unit, index) in visibleUnits" :key="unit.unit_code"
               :ref="el => { if (el) rowRefs[index] = el }"
               :class="{ 'auto-highlight': autoHighlightIndex === index && !isUserInteracting }">
             <td class="sticky-col font-semibold" style="color: var(--text-primary);">{{ unit.unit_code }}</td>
@@ -130,7 +130,7 @@
           <tr v-if="!sortedUnits || sortedUnits.length === 0">
             <td colspan="12" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
           </tr>
-        </tbody>
+        </transition-group>
       </table>
     </div>
     <!-- Auto-scroll status indicator -->
@@ -172,10 +172,16 @@ const autoHighlightColumnIndex = ref(0);
 const isUserInteracting = ref(false);
 let autoScrollTimer = null;
 let mouseIdleTimer = null;
+let rowAnimationTimer = null;
 const AUTO_SCROLL_INTERVAL = 5000; // 5s per column popup
 const MOUSE_IDLE_TIMEOUT = 5000; // resume after 5s idle
 
 const popupTypes = ['delay', 'hauling', 'transit', 'ob', 'fuel'];
+
+const visibleUnitsCount = ref(0);
+const visibleUnits = computed(() => {
+  return sortedUnits.value?.slice(0, visibleUnitsCount.value) || [];
+});
 
 const isAutoHover = (unitCode, type, rowIndex) => {
   if (isUserInteracting.value) return false;
@@ -183,8 +189,39 @@ const isAutoHover = (unitCode, type, rowIndex) => {
   return popupTypes[autoHighlightColumnIndex.value] === type;
 };
 
+const startRowEntranceAnimation = () => {
+  stopAutoScroll();
+  if (rowAnimationTimer) clearInterval(rowAnimationTimer);
+  
+  visibleUnitsCount.value = 0;
+  const totalRows = sortedUnits.value?.length || 0;
+  
+  if (totalRows === 0) return;
+
+  rowAnimationTimer = setInterval(() => {
+    if (visibleUnitsCount.value < totalRows) {
+      visibleUnitsCount.value++;
+      
+      // Auto scroll downwards to show the newly added row
+      nextTick(() => {
+        if (tableWrapperRef.value) {
+          tableWrapperRef.value.scrollTop = tableWrapperRef.value.scrollHeight;
+        }
+      });
+    } else {
+      // Finished adding all rows
+      clearInterval(rowAnimationTimer);
+      rowAnimationTimer = null;
+      
+      // Now start the popup cycle animation
+      setTimeout(() => startAutoScroll(), 1000);
+    }
+  }, 200); // Add one row every 200ms
+};
+
 const startAutoScroll = () => {
   stopAutoScroll();
+  if (rowAnimationTimer) return; // Wait for entrance animation to finish
   isUserInteracting.value = false;
   
   autoScrollTimer = setInterval(() => {
@@ -222,23 +259,32 @@ const onMouseActivity = () => {
   autoHighlightIndex.value = -1;
   stopAutoScroll();
   
+  // If entrance animation was running, complete it instantly
+  if (rowAnimationTimer) {
+    clearInterval(rowAnimationTimer);
+    rowAnimationTimer = null;
+    visibleUnitsCount.value = sortedUnits.value?.length || 0;
+  }
+  
   // Reset idle timer
   if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
   mouseIdleTimer = setTimeout(() => {
     // Mouse has been idle for 5s, resume auto-scroll
+    isUserInteracting.value = false;
     startAutoScroll();
   }, MOUSE_IDLE_TIMEOUT);
 };
 
 // Start auto-scroll when data is available
 watch(() => kpiStore.unitPerformances, (newVal) => {
-  if (newVal && newVal.length > 0 && !autoScrollTimer && !isUserInteracting.value) {
-    setTimeout(() => startAutoScroll(), 1000);
+  if (newVal && newVal.length > 0 && !autoScrollTimer && !rowAnimationTimer && !isUserInteracting.value) {
+    setTimeout(() => startRowEntranceAnimation(), 500);
   }
 }, { immediate: true });
 
 onUnmounted(() => {
   stopAutoScroll();
+  if (rowAnimationTimer) clearInterval(rowAnimationTimer);
   if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
 });
 
@@ -485,6 +531,22 @@ const sortedUnits = computed(() => {
 .modern-table tbody tr {
   transition: all 0.5s ease;
   position: relative;
+}
+
+/* Staggered entrance animation classes */
+.slide-row-enter-active {
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.slide-row-leave-active {
+  transition: all 0.3s ease-in;
+}
+.slide-row-enter-from {
+  opacity: 0;
+  transform: translateX(-100px);
+}
+.slide-row-leave-to {
+  opacity: 0;
+  transform: translateX(100px);
 }
 
 .modern-table tbody tr:hover {
