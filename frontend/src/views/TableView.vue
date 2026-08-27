@@ -172,7 +172,7 @@ const autoHighlightColumnIndex = ref(0);
 const isUserInteracting = ref(false);
 let autoScrollTimer = null;
 let mouseIdleTimer = null;
-const AUTO_SCROLL_INTERVAL = 3000; // 3s per column popup
+const AUTO_SCROLL_INTERVAL = 5000; // 5s per column popup
 const MOUSE_IDLE_TIMEOUT = 5000; // resume after 5s idle
 
 const popupTypes = ['delay', 'hauling', 'transit', 'ob', 'fuel'];
