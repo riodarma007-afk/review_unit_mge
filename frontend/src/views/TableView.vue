@@ -1,6 +1,6 @@
 <template>
-  <div class="matrix-container">
-    <div class="table-wrapper">
+  <div class="matrix-container" @mousemove="onMouseActivity" @mousedown="onMouseActivity">
+    <div class="table-wrapper" ref="tableWrapperRef">
       <table class="modern-table">
         <thead>
           <tr>
@@ -30,7 +30,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="unit in sortedUnits" :key="unit.unit_code">
+          <tr v-for="(unit, index) in sortedUnits" :key="unit.unit_code"
+              :ref="el => { if (el) rowRefs[index] = el }"
+              :class="{ 'auto-highlight': autoHighlightIndex === index && !isUserInteracting }">
             <td class="sticky-col font-semibold" style="color: var(--text-primary);">{{ unit.unit_code }}</td>
             
             <td class="font-mono text-sm text-gray-500 whitespace-nowrap">{{ unit.date || '-' }}</td>
@@ -135,7 +137,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { Truck, Calendar, Activity, Clock, AlertTriangle, Box, RefreshCcw, Mountain, Scale, Target, Fuel, Zap } from 'lucide-vue-next';
 import { useKpiStore } from '../stores/kpiStore';
 import { useFilterStore } from '../stores/filterStore';
@@ -156,6 +158,66 @@ const hoveredFuelUnit = ref(null);
 const hoveredHaulingUnit = ref(null);
 const hoveredTransitUnit = ref(null);
 const hoveredObUnit = ref(null);
+
+// === Auto-scroll row-by-row ===
+const tableWrapperRef = ref(null);
+const rowRefs = ref({});
+const autoHighlightIndex = ref(-1);
+const isUserInteracting = ref(false);
+let autoScrollTimer = null;
+let mouseIdleTimer = null;
+const AUTO_SCROLL_INTERVAL = 3000; // 3s per row
+const MOUSE_IDLE_TIMEOUT = 5000; // resume after 5s idle
+
+const startAutoScroll = () => {
+  stopAutoScroll();
+  isUserInteracting.value = false;
+  autoScrollTimer = setInterval(() => {
+    const totalRows = sortedUnits.value?.length || 0;
+    if (totalRows === 0) return;
+    
+    autoHighlightIndex.value = (autoHighlightIndex.value + 1) % totalRows;
+    
+    // Scroll to keep highlighted row visible
+    nextTick(() => {
+      const row = rowRefs.value[autoHighlightIndex.value];
+      if (row && tableWrapperRef.value) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }, AUTO_SCROLL_INTERVAL);
+};
+
+const stopAutoScroll = () => {
+  if (autoScrollTimer) {
+    clearInterval(autoScrollTimer);
+    autoScrollTimer = null;
+  }
+};
+
+const onMouseActivity = () => {
+  // Pause auto-scroll when user interacts
+  isUserInteracting.value = true;
+  autoHighlightIndex.value = -1;
+  stopAutoScroll();
+  
+  // Reset idle timer
+  if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
+  mouseIdleTimer = setTimeout(() => {
+    // Mouse has been idle for 5s, resume auto-scroll
+    startAutoScroll();
+  }, MOUSE_IDLE_TIMEOUT);
+};
+
+onMounted(() => {
+  // Start auto-scroll after a short delay to let data load
+  setTimeout(() => startAutoScroll(), 2000);
+});
+
+onUnmounted(() => {
+  stopAutoScroll();
+  if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
+});
 
 // Sort state
 const sortKey = ref('unit_code');
@@ -398,7 +460,7 @@ const sortedUnits = computed(() => {
 }
 
 .modern-table tbody tr {
-  transition: all 0.2s ease;
+  transition: all 0.5s ease;
   position: relative;
 }
 
@@ -409,6 +471,38 @@ const sortedUnits = computed(() => {
 .modern-table tbody tr:hover .sticky-col {
   background-color: #f4f7fe !important;
   box-shadow: inset 4px 0 0 0 #4338ca;
+}
+
+/* Auto-highlight animation for TV mode */
+.modern-table tbody tr.auto-highlight {
+  background: linear-gradient(90deg, #eef2ff 0%, #e0e7ff 50%, #eef2ff 100%) !important;
+  background-size: 200% 100% !important;
+  animation: shimmerRow 2s ease-in-out infinite;
+}
+
+.modern-table tbody tr.auto-highlight .sticky-col {
+  background: linear-gradient(90deg, #eef2ff 0%, #e0e7ff 50%, #eef2ff 100%) !important;
+  box-shadow: inset 4px 0 0 0 #6366f1;
+  background-size: 200% 100% !important;
+  animation: shimmerRow 2s ease-in-out infinite;
+}
+
+.modern-table tbody tr.auto-highlight td {
+  transform: scale(1.0);
+}
+
+.modern-table tbody tr.auto-highlight .mini-bar-fill {
+  animation: pulseBar 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmerRow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes pulseBar {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* Badges & Pills */
