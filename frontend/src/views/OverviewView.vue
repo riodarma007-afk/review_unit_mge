@@ -205,9 +205,9 @@ const paretoChartSeries = computed(() => {
         {
           name: 'Plan',
           value: parseFloat(plan.toFixed(2)),
-          strokeHeight: 3,
-          strokeWidth: 12,
-          strokeColor: '#f59e0b', // Orange target marker
+          strokeHeight: 18,
+          strokeWidth: 3,
+          strokeColor: '#f97316', // bright orange
         }
       ];
     }
@@ -236,11 +236,11 @@ const paretoChartOptions = computed(() => {
     },
     plotOptions: {
       bar: {
-        horizontal: false,
+        horizontal: true,
         borderRadius: 4,
-        columnWidth: '50%',
+        barHeight: '55%',
         dataLabels: {
-          position: 'top',
+          position: 'top', // 'top' in horizontal means right end
         }
       }
     },
@@ -248,19 +248,29 @@ const paretoChartOptions = computed(() => {
     dataLabels: {
       enabled: true,
       textAnchor: 'start',
-      offsetX: 10,
-      formatter: function (val, opt) {
+      offsetX: 5,
+      formatter: function (val) {
         return val + 'h';
       },
       style: {
-        fontSize: '12px',
-        colors: ['#333']
+        fontSize: '11px',
+        fontWeight: 600,
+        colors: ['#0f172a']
       }
     },
     xaxis: {
       labels: {
         formatter: function (val) {
-          return val + 'h';
+          return val + 'h'; // Numeric bottom axis
+        }
+      }
+    },
+    yaxis: {
+      labels: {
+        style: {
+          fontSize: '11px',
+          fontWeight: 500,
+          colors: ['#475569']
         }
       }
     },
