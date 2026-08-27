@@ -485,7 +485,7 @@ const getBadgeColor = (code) => {
                     <span v-if="item.plan_hours > 0" class="clean-plan-val">
                       <span class="divider">|</span>
                       <span class="subtle-label">Plan:</span>
-                      <span class="target">{{ item.plan_hours }}h</span>
+                      <span class="target">{{ Number(item.plan_hours).toFixed(2) }}h</span>
                     </span>
                   </div>
                 </div>
