@@ -33,66 +33,48 @@ export const useFilterStore = defineStore('filter', {
     }
   },
   actions: {
+    _getYesterdayStr() {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yyyy = yesterday.getFullYear();
+      const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+      const dd = String(yesterday.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    },
+    
     async fetchOptions() {
       this.isLoading = true;
       try {
         const response = await apiClient.get('/filters/options');
         this.options = response.data;
         
-        // Auto select yesterday (today - 1)
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yyyy = yesterday.getFullYear();
-        const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
-        const dd = String(yesterday.getDate()).padStart(2, '0');
+        // ALWAYS set to yesterday on page load
+        const dateStr = this._getYesterdayStr();
+        this.filters.date_from = dateStr;
+        this.filters.date_to = dateStr;
         
-        const dateStr = `${yyyy}-${mm}-${dd}`;
-        
-        if (!this.filters.date_from) {
-          this.filters.date_from = dateStr;
-        }
-        if (!this.filters.date_to) {
-          this.filters.date_to = dateStr;
-        }
       } catch (error) {
         console.error('Error fetching filter options:', error);
       } finally {
         this.isLoading = false;
       }
     },
+    
     checkAndUpdateAutoDate() {
-      // Check if current date filters match the "yesterday" of when it was last set
-      // If it does, and "yesterday" has now moved to a new day, update it.
-      const getYesterdayStr = () => {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yyyy = yesterday.getFullYear();
-        const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
-        const dd = String(yesterday.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      };
+      // Called during auto-refresh cycles.
+      // If both date_from and date_to are the same (user hasn't set a custom range)
+      // and they are older than current yesterday, auto-roll forward.
+      const currentYesterday = this._getYesterdayStr();
       
-      const currentYesterday = getYesterdayStr();
+      const from = this.filters.date_from;
+      const to = this.filters.date_to;
       
-      // If the user hasn't touched the date, or they're just watching live,
-      // it should be safe to auto-roll to the new "yesterday" if it changed.
-      // But we can only guess if it's safe by checking if it was the OLD yesterday.
-      // Actually, a simpler approach is: if date_from === date_to, and it's less than currentYesterday,
-      // and we are running auto-refresh, we can just bump it. But that might annoy users viewing history.
-      // Better: we store the last computed auto-date.
-      
-      if (!this._lastComputedAutoDate) {
-        this._lastComputedAutoDate = currentYesterday;
-      }
-      
-      if (this._lastComputedAutoDate !== currentYesterday) {
-        // A new day has dawned!
-        // If the user was viewing the OLD auto-date, move them to the NEW auto-date.
-        if (this.filters.date_from === this._lastComputedAutoDate && this.filters.date_to === this._lastComputedAutoDate) {
-          this.filters.date_from = currentYesterday;
-          this.filters.date_to = currentYesterday;
-        }
-        this._lastComputedAutoDate = currentYesterday;
+      // Only auto-update if user is viewing a single day (from === to)
+      // and that day is older than the current yesterday
+      if (from && to && from === to && from < currentYesterday) {
+        console.log(`[Auto-Date] Rolling date forward: ${from} → ${currentYesterday}`);
+        this.filters.date_from = currentYesterday;
+        this.filters.date_to = currentYesterday;
       }
     },
     setFilter(key, value) {
