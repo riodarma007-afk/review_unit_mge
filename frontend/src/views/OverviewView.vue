@@ -205,8 +205,8 @@ const paretoChartSeries = computed(() => {
         {
           name: 'Plan',
           value: parseFloat(plan.toFixed(2)),
-          strokeWidth: 4,
-          strokeHeight: 12,
+          strokeHeight: 3,
+          strokeWidth: 12,
           strokeColor: '#f59e0b', // Orange target marker
         }
       ];
@@ -236,8 +236,9 @@ const paretoChartOptions = computed(() => {
     },
     plotOptions: {
       bar: {
-        horizontal: true,
+        horizontal: false,
         borderRadius: 4,
+        columnWidth: '50%',
         dataLabels: {
           position: 'top',
         }
