@@ -138,7 +138,14 @@
             
           </tr>
           <tr v-if="!sortedUnits || sortedUnits.length === 0">
-            <td colspan="12" class="text-center text-gray-500 py-8">Tidak ada data unit.</td>
+            <td colspan="100%" class="text-center text-gray-500 py-8">
+              No unit data available.
+            </td>
+          </tr>
+          
+          <!-- Invisible spacer row to allow deep scrolling -->
+          <tr class="spacer-row" aria-hidden="true">
+            <td colspan="100%"></td>
           </tr>
         </transition-group>
       </table>
@@ -463,7 +470,14 @@ const sortedUnits = computed(() => {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  margin-bottom: 400px; /* Large space so last rows can scroll to center, avoiding popup cutoff */
+}
+
+.spacer-row td {
+  height: 45vh; /* Large spacer so last rows can reach the center of the screen */
+  border: none !important;
+  padding: 0 !important;
+  pointer-events: none;
+  background: transparent !important;
 }
 
 .modern-table th, .modern-table td {
