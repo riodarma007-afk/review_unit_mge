@@ -72,38 +72,46 @@
             </td>
 
             <!-- Top Event -->
-            <td class="relative interactive-cell" @mouseenter="hoveredDelayUnit = unit.unit_code" @mouseleave="hoveredDelayUnit = null">
+            <td class="relative interactive-cell" :class="{ 'active-cell-highlight': hoveredDelayUnit === unit.unit_code || isAutoHover(unit.unit_code, 'delay', index) }" @mouseenter="hoveredDelayUnit = unit.unit_code" @mouseleave="hoveredDelayUnit = null">
                 <div v-if="getTopEvent(unit)" class="status-pill">
                   <span class="status-dot"></span>
                   <span class="event-name" :title="getTopEvent(unit).status">{{ formatDelayReason(getTopEvent(unit).status) }}</span>
                 </div>
               <span v-else class="text-xs text-gray-400">-</span>
               
-              <TopDelayPopup v-if="hoveredDelayUnit === unit.unit_code || isAutoHover(unit.unit_code, 'delay', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <transition name="popup-fade">
+                <TopDelayPopup v-if="hoveredDelayUnit === unit.unit_code || isAutoHover(unit.unit_code, 'delay', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              </transition>
             </td>
 
             <!-- Hauling Production -->
-            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredHaulingUnit = unit.unit_code" @mouseleave="hoveredHaulingUnit = null">
+            <td class="font-mono text-sm relative interactive-cell" :class="{ 'active-cell-highlight': hoveredHaulingUnit === unit.unit_code || isAutoHover(unit.unit_code, 'hauling', index) }" @mouseenter="hoveredHaulingUnit = unit.unit_code" @mouseleave="hoveredHaulingUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.hauling" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.hauling || 0).toFixed(1) }}</span>
               
-              <HaulingPopup v-if="hoveredHaulingUnit === unit.unit_code || isAutoHover(unit.unit_code, 'hauling', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <transition name="popup-fade">
+                <HaulingPopup v-if="hoveredHaulingUnit === unit.unit_code || isAutoHover(unit.unit_code, 'hauling', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              </transition>
             </td>
 
             <!-- Transit Production -->
-            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredTransitUnit = unit.unit_code" @mouseleave="hoveredTransitUnit = null">
+            <td class="font-mono text-sm relative interactive-cell" :class="{ 'active-cell-highlight': hoveredTransitUnit === unit.unit_code || isAutoHover(unit.unit_code, 'transit', index) }" @mouseenter="hoveredTransitUnit = unit.unit_code" @mouseleave="hoveredTransitUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.transit" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.transit || 0).toFixed(1) }}</span>
               
-              <TransitPopup v-if="hoveredTransitUnit === unit.unit_code || isAutoHover(unit.unit_code, 'transit', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <transition name="popup-fade">
+                <TransitPopup v-if="hoveredTransitUnit === unit.unit_code || isAutoHover(unit.unit_code, 'transit', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              </transition>
             </td>
 
             <!-- OB Production -->
-            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredObUnit = unit.unit_code" @mouseleave="hoveredObUnit = null">
+            <td class="font-mono text-sm relative interactive-cell" :class="{ 'active-cell-highlight': hoveredObUnit === unit.unit_code || isAutoHover(unit.unit_code, 'ob', index) }" @mouseenter="hoveredObUnit = unit.unit_code" @mouseleave="hoveredObUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.ob" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.ob || 0).toFixed(1) }}</span>
               
-              <ObPopup v-if="hoveredObUnit === unit.unit_code || isAutoHover(unit.unit_code, 'ob', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              <transition name="popup-fade">
+                <ObPopup v-if="hoveredObUnit === unit.unit_code || isAutoHover(unit.unit_code, 'ob', index)" :unit-code="unit.unit_code" :date-from="filterStore.filters.date_from" :date-to="filterStore.filters.date_to" :shift="filterStore.filters.shift" class="absolute-popup top-delay-pos" />
+              </transition>
             </td>
             
             <!-- Payload -->
@@ -119,11 +127,13 @@
             </td>
 
             <!-- Fuel -->
-            <td class="font-mono text-sm relative interactive-cell" @mouseenter="hoveredFuelUnit = unit.unit_code" @mouseleave="hoveredFuelUnit = null">
+            <td class="font-mono text-sm relative interactive-cell" :class="{ 'active-cell-highlight': hoveredFuelUnit === unit.unit_code || isAutoHover(unit.unit_code, 'fuel', index) }" @mouseenter="hoveredFuelUnit = unit.unit_code" @mouseleave="hoveredFuelUnit = null">
               <span v-if="loadingStates[unit.unit_code]?.fuel" class="text-gray-400 text-xs">...</span>
               <span v-else>{{ (unitExtraData[unit.unit_code]?.fuel || 0).toFixed(1) }}</span>
               
-              <FuelPopup v-if="hoveredFuelUnit === unit.unit_code || isAutoHover(unit.unit_code, 'fuel', index)" :unit-code="unit.unit_code" :fuel-data-prop="unitExtraData[unit.unit_code]?.rawFuelData" :hauling-data-prop="unitExtraData[unit.unit_code]?.rawHaulingData" class="absolute-popup fuel-pos" />
+              <transition name="popup-fade">
+                <FuelPopup v-if="hoveredFuelUnit === unit.unit_code || isAutoHover(unit.unit_code, 'fuel', index)" :unit-code="unit.unit_code" :fuel-data-prop="unitExtraData[unit.unit_code]?.rawFuelData" :hauling-data-prop="unitExtraData[unit.unit_code]?.rawHaulingData" class="absolute-popup fuel-pos" />
+              </transition>
             </td>
             
           </tr>
@@ -693,16 +703,59 @@ const sortedUnits = computed(() => {
     top: 50%;
     transform: translateY(-50%);
     z-index: 9999;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.2));
+  }
+  
+  /* Create pointing arrow (cuitan) */
+  .absolute-popup::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent;
   }
   
   .top-delay-pos {
-    left: 100%;
-    margin-left: 10px;
+    left: calc(100% + 12px); /* space for arrow */
+  }
+  .top-delay-pos::before {
+    right: 100%; /* Arrow on the left of popup pointing left */
+    border-right-color: #1e293b; /* slate-800 to match dark-card */
   }
   
   .fuel-pos {
-    right: 100%;
-    margin-right: 10px;
+    right: calc(100% + 12px);
+  }
+  .fuel-pos::before {
+    left: 100%; /* Arrow on the right of popup pointing right */
+    border-left-color: #1e293b;
+  }
+
+  /* Popup Animation Transition */
+  .popup-fade-enter-active {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .popup-fade-leave-active {
+    transition: all 0.2s ease-in;
+  }
+  .popup-fade-enter-from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.9);
+  }
+  .popup-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  /* Active Cell Highlight */
+  .active-cell-highlight {
+    background-color: #e0e7ff !important;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 2px #818cf8;
+    position: relative;
+    z-index: 10;
   }
 
   /* Auto-scroll badge */
