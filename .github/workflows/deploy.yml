@@ -58,13 +58,6 @@ jobs:
           npm ci
           npm run build
 
-      - name: Upload frontend dist as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist/
-          retention-days: 1
-
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -75,11 +68,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download frontend dist
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist/
+      - name: Build frontend
+        env:
+          VITE_BASE_PATH: /optrack/
+        run: |
+          cd frontend
+          npm ci
+          npm run build
 
       - name: Prepare directories di server
         uses: appleboy/ssh-action@v1
