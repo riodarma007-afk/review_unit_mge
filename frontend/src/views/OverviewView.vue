@@ -58,6 +58,13 @@ const isTransitLoading = computed(() => kpiStore.isTransitLoading);
 const obData = computed(() => kpiStore.obData);
 const isObLoading = computed(() => kpiStore.isObLoading);
 
+const activeAllocation = computed(() => {
+  if (haulingData.value?.allocation) return haulingData.value.allocation;
+  if (transitData.value?.allocation) return transitData.value.allocation;
+  if (obData.value?.allocation) return obData.value.allocation;
+  return '-';
+});
+
 // Auto-refresh
 const countdown = ref(kpiStore.autoRefreshInterval);
 let countdownTimer = null;
@@ -269,7 +276,7 @@ const getBadgeColor = (code) => {
     <div v-else-if="unitPerfs.length > 0" style="display: contents;">
       
       <!-- Row 1: KPI Summary Cards -->
-      <div class="grid-5 row">
+      <div class="grid-6 row">
         <!-- PA Card -->
         <div class="kpi-summary-card">
           <div class="kpi-header">
@@ -455,6 +462,37 @@ const getBadgeColor = (code) => {
             </div>
           </div>
         </div>
+
+        <!-- Allocation / Area Kerja Card -->
+        <div class="kpi-summary-card">
+          <div class="kpi-header">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="kpi-dot" style="background: #14b8a6;"></span>
+              <span class="kpi-title">Lokasi Area Kerja</span>
+            </div>
+            <div class="kpi-icon-wrapper" style="background: #ccfbf1; color: #0d9488;">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-body">
+            <div v-if="isHaulingLoading || isTransitLoading || isObLoading" style="display:flex;align-items:center;gap:8px;">
+              <div class="spinner" style="width:20px;height:20px;border-width:2px;"></div>
+              <span style="font-size:0.85rem;color:var(--text-muted);">Loading...</span>
+            </div>
+            <div v-else>
+              <span class="kpi-value" style="font-size: 1.25rem;">{{ activeAllocation }}</span>
+            </div>
+            <div style="margin-top: 8px;">
+              <span class="kpi-badge" style="background: #f1f5f9; color: #64748b;">
+                📍 Dominant Pit
+              </span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Row 2: Unit Carousel + Unit Event -->

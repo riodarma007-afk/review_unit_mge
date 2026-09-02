@@ -339,6 +339,12 @@ h1, h2, h3, h4, h5, h6 {
   gap: 1rem;
 }
 
+.grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+}
+
 .grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
