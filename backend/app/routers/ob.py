@@ -87,10 +87,10 @@ async def get_ob_by_unit(
     
     ob_rows, inpit_rows = await asyncio.gather(ob_task, inpit_task)
     
-    # Filter strict by hauler
+    # Filter strict by hauler or loader
     search_unit = unit_code.replace(" ", "").replace("-", "").upper()
-    ob_filtered = [r for r in ob_rows if str(r.get("hauler", "")).replace(" ", "").replace("-", "").upper() == search_unit]
-    inpit_filtered = [r for r in inpit_rows if str(r.get("hauler", "")).replace(" ", "").replace("-", "").upper() == search_unit]
+    ob_filtered = [r for r in ob_rows if str(r.get("hauler", "")).replace(" ", "").replace("-", "").upper() == search_unit or str(r.get("loader", "")).replace(" ", "").replace("-", "").upper() == search_unit]
+    inpit_filtered = [r for r in inpit_rows if str(r.get("hauler", "")).replace(" ", "").replace("-", "").upper() == search_unit or str(r.get("loader", "")).replace(" ", "").replace("-", "").upper() == search_unit]
     
     total_volume = 0.0
     trip_count = 0

@@ -94,8 +94,9 @@ async def get_hauling_by_unit(
 
     rows = await _fetch_hauling_pages(params)
     
-    # Filter strict by unit_code since search can be fuzzy
-    filtered = [r for r in rows if str(r.get("unit_id", "")).strip().upper() == unit_code.upper()]
+    # Filter strict by unit_code since search can be fuzzy (check both hauler and loader)
+    search_unit = unit_code.strip().upper()
+    filtered = [r for r in rows if str(r.get("unit_id", "")).strip().upper() == search_unit or str(r.get("loader_id", "")).strip().upper() == search_unit]
     
     from collections import defaultdict
     from datetime import datetime
