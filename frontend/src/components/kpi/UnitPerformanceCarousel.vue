@@ -90,6 +90,21 @@ const fmt = (val) => {
 const getImageUrl = (unitCode) => {
   const base = import.meta.env.BASE_URL;
   if (!unitCode) return `${base}units/GHT-701.jpg`; // Fallback
+  
+  const code = unitCode.toUpperCase();
+  if (code.startsWith('GEX')) {
+    const match = code.match(/\d+/);
+    if (match) {
+      const num = parseInt(match[0], 10);
+      if (num >= 200 && num < 300) {
+        return `${base}units/hyundai-pc200.png`;
+      } else if (num >= 500) {
+        return `${base}units/hyundai-pc500.png`;
+      }
+    }
+    return `${base}units/hyundai-pc500.png`;
+  }
+
   // Format "GHT 701" -> "GHT-701"
   const formattedName = unitCode.replace(' ', '-');
   return `${base}units/${formattedName}.jpg`;
@@ -99,6 +114,9 @@ const getBadgeColor = (unitCode) => {
   const code = unitCode.toUpperCase();
   if (code.startsWith('GMT')) {
     return '#ef4444'; // Red
+  }
+  if (code.startsWith('GEX')) {
+    return '#8b5cf6'; // Purple
   }
   if (code.startsWith('GHT')) {
     const match = code.match(/\d+/);
