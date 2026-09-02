@@ -362,6 +362,9 @@ const fetchExtraData = async () => {
           }
           if (transitRes.status === 'fulfilled') {
             unitExtraData.value[code].transit = transitRes.value.data?.total_netto || 0;
+            if (!unitExtraData.value[code].allocation && transitRes.value.data?.allocation) {
+              unitExtraData.value[code].allocation = transitRes.value.data.allocation;
+            }
           }
           if (obRes.status === 'fulfilled') {
             unitExtraData.value[code].ob = obRes.value.data?.total_bcm || 0;

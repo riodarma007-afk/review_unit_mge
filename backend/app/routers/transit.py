@@ -138,6 +138,11 @@ async def get_transit_by_unit(
     avg_ritasi_per_day = total_ritasi / days_count
     avg_netto_per_rit = total_netto / total_ritasi if total_ritasi > 0 else 0
 
+    # Determine primary allocation (most frequent pit)
+    allocation = ""
+    if pits:
+        allocation = max(pits, key=pits.get)
+
     result = {
         "unit_code": unit_code,
         "total_ritasi": total_ritasi,
@@ -147,6 +152,7 @@ async def get_transit_by_unit(
         "days_count": days_count,
         "products": dict(products),
         "pits": dict(pits),
+        "allocation": allocation,
         "hourly": {f"h{k}": v for k, v in sorted(hourly.items())},
     }
 
