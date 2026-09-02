@@ -320,6 +320,18 @@ const fetchExtraData = async () => {
     if (filters.shift) params.append('shift', filters.shift);
     if (filters.pit) params.append('pit', filters.pit);
   
+    // Create temporary objects to hold the new data
+    // This prevents the UI from updating batch-by-batch (popcorning effect)
+    const tempExtraData = { ...unitExtraData.value };
+    const tempLoadingStates = { ...loadingStates.value };
+
+    // Set all requested units to loading state immediately in the temp object
+    units.forEach(unit => {
+      tempLoadingStates[unit.unit_code] = { hauling: true, fuel: true, transit: true, ob: true };
+    });
+    // Optional: If you want the UI to show '...' for all units immediately, assign it here:
+    loadingStates.value = { ...tempLoadingStates };
+
     // Process units in batches to prevent browser connection limits / server overload
     const batchSize = 3;
     for (let i = 0; i < units.length; i += batchSize) {
@@ -327,16 +339,8 @@ const fetchExtraData = async () => {
       
       await Promise.all(batch.map(async (unit) => {
         const code = unit.unit_code;
-        if (!unitExtraData.value[code]) {
-          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, ritpiday: 0, fuel: 0, ratio: 0, allocation: '', rawFuelData: null, rawHaulingData: null };
-        }
-        if (!loadingStates.value[code]) {
-          loadingStates.value[code] = { hauling: true, fuel: true, transit: true, ob: true };
-        } else {
-          loadingStates.value[code].hauling = true;
-          loadingStates.value[code].fuel = true;
-          loadingStates.value[code].transit = true;
-          loadingStates.value[code].ob = true;
+        if (!tempExtraData[code]) {
+          tempExtraData[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, ritpiday: 0, fuel: 0, ratio: 0, allocation: '', rawFuelData: null, rawHaulingData: null };
         }
 
         const unitParams = new URLSearchParams(params);
@@ -351,40 +355,41 @@ const fetchExtraData = async () => {
           ]);
 
           if (haulingRes.status === 'fulfilled') {
-            unitExtraData.value[code].rawHaulingData = haulingRes.value.data;
-            unitExtraData.value[code].hauling = haulingRes.value.data?.total_tonage || 0;
-            unitExtraData.value[code].payload = haulingRes.value.data?.avg_payload || 0;
-            unitExtraData.value[code].load_time = haulingRes.value.data?.avg_loading_time || 0;
-            unitExtraData.value[code].ritpiday = haulingRes.value.data?.avg_ritasi_per_day || 0;
+            tempExtraData[code].rawHaulingData = haulingRes.value.data;
+            tempExtraData[code].hauling = haulingRes.value.data?.total_tonage || 0;
+            tempExtraData[code].payload = haulingRes.value.data?.avg_payload || 0;
+            tempExtraData[code].load_time = haulingRes.value.data?.avg_loading_time || 0;
+            tempExtraData[code].ritpiday = haulingRes.value.data?.avg_ritasi_per_day || 0;
             if (haulingRes.value.data?.allocation) {
-              unitExtraData.value[code].allocation = haulingRes.value.data.allocation;
+              tempExtraData[code].allocation = haulingRes.value.data.allocation;
             }
           }
           if (transitRes.status === 'fulfilled') {
-            unitExtraData.value[code].transit = transitRes.value.data?.total_netto || 0;
-            if (!unitExtraData.value[code].allocation && transitRes.value.data?.allocation) {
-              unitExtraData.value[code].allocation = transitRes.value.data.allocation;
+            tempExtraData[code].transit = transitRes.value.data?.total_netto || 0;
+            if (!tempExtraData[code].allocation && transitRes.value.data?.allocation) {
+              tempExtraData[code].allocation = transitRes.value.data.allocation;
             }
           }
           if (obRes.status === 'fulfilled') {
-            unitExtraData.value[code].ob = obRes.value.data?.total_bcm || 0;
-            if (!unitExtraData.value[code].allocation && obRes.value.data?.allocation) {
-              unitExtraData.value[code].allocation = obRes.value.data.allocation;
+            tempExtraData[code].ob = obRes.value.data?.total_bcm || 0;
+            if (!tempExtraData[code].allocation && obRes.value.data?.allocation) {
+              tempExtraData[code].allocation = obRes.value.data.allocation;
             }
           }
           if (fuelRes.status === 'fulfilled') {
-            unitExtraData.value[code].rawFuelData = fuelRes.value.data;
-            unitExtraData.value[code].fuel = fuelRes.value.data?.total_liters || 0;
-            unitExtraData.value[code].ratio = fuelRes.value.data?.average_km_per_liter || 0;
+            tempExtraData[code].rawFuelData = fuelRes.value.data;
+            tempExtraData[code].fuel = fuelRes.value.data?.total_liters || 0;
+            tempExtraData[code].ratio = fuelRes.value.data?.average_km_per_liter || 0;
           }
         } finally {
-          loadingStates.value[code].hauling = false;
-          loadingStates.value[code].transit = false;
-          loadingStates.value[code].ob = false;
-          loadingStates.value[code].fuel = false;
+          tempLoadingStates[code] = { hauling: false, fuel: false, transit: false, ob: false };
         }
       }));
     }
+    
+    // Assign EVERYTHING at once at the very end so all rows appear simultaneously
+    unitExtraData.value = { ...tempExtraData };
+    loadingStates.value = { ...tempLoadingStates };
   };
 
 watch(() => kpiStore.unitPerformances, () => {
