@@ -148,6 +148,11 @@ async def get_ob_by_unit(
     avg_ritasi_per_day = trip_count / days_count if days_count > 0 else 0
     avg_payload = total_volume / trip_count if trip_count > 0 else 0
             
+    # Determine primary allocation (most frequent pit by total trips)
+    allocation = ""
+    if pits_data:
+        allocation = max(pits_data, key=lambda k: pits_data[k]["ob_trip"] + pits_data[k]["inpit_trip"])
+    
     result = {
         "unit_code": unit_code,
         "total_bcm": round(total_volume, 2),
@@ -158,6 +163,7 @@ async def get_ob_by_unit(
         "inpit_trip": inpit_trip_count,
         "avg_ritasi_per_day": round(avg_ritasi_per_day, 1),
         "avg_payload": round(avg_payload, 2),
+        "allocation": allocation,
         "pits": {k: {
             "ob_bcm": round(v["ob_bcm"], 2),
             "ob_trip": v["ob_trip"],

@@ -105,6 +105,7 @@ async def get_hauling_by_unit(
     unique_dates = set()
     total_loading_time_minutes = 0.0
     products_breakdown = defaultdict(int)
+    pit_fix_counts = defaultdict(int)
     
     for r in filtered:
         # Tonage
@@ -137,12 +138,22 @@ async def get_hauling_by_unit(
         prod = r.get("product")
         if prod:
             products_breakdown[prod] += 1
+        
+        # Pit Fix (Allocation)
+        pf = r.get("pit_fix")
+        if pf:
+            pit_fix_counts[pf.strip()] += 1
             
     days_count = len(unique_dates) if len(unique_dates) > 0 else 1
     avg_ritasi_per_day = trip_count / days_count if days_count > 0 else 0
     avg_payload = total_tonage / trip_count if trip_count > 0 else 0
     avg_loading_time = total_loading_time_minutes / trip_count if trip_count > 0 else 0
             
+    # Determine primary allocation (most frequent pit_fix)
+    allocation = ""
+    if pit_fix_counts:
+        allocation = max(pit_fix_counts, key=pit_fix_counts.get)
+    
     result = {
         "unit_code": unit_code,
         "total_tonage": round(total_tonage, 2),
@@ -150,7 +161,8 @@ async def get_hauling_by_unit(
         "avg_ritasi_per_day": round(avg_ritasi_per_day, 1),
         "avg_payload": round(avg_payload, 2),
         "avg_loading_time": round(avg_loading_time, 1),
-        "products": dict(products_breakdown)
+        "products": dict(products_breakdown),
+        "allocation": allocation
     }
     _HAULING_RESULT_CACHE[result_key] = (time.time(), result)
     return result

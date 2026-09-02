@@ -11,6 +11,11 @@
             
             <th><div class="th-content"><Calendar class="icon" /> Date</div></th>
             
+            <th class="sortable" @click="sortBy('allocation')">
+              <div class="th-content"><MapPin class="icon" /> Allocation</div>
+              <span v-if="sortKey === 'allocation'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span>
+            </th>
+            
             <!-- Availability & Delay -->
             <th class="sortable" @click="sortBy('pa')"><div class="th-content"><Activity class="icon" /> PA (%)<span v-if="sortKey === 'pa'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
             <th class="sortable" @click="sortBy('ua')"><div class="th-content"><Activity class="icon" /> UA (%)<span v-if="sortKey === 'ua'" class="sort-icon">{{ sortOrder === 1 ? '▲' : '▼' }}</span></div></th>
@@ -36,6 +41,11 @@
             <td class="sticky-col font-semibold" style="color: var(--text-primary);">{{ unit.unit_code }}</td>
             
             <td class="font-mono text-sm text-gray-500 whitespace-nowrap">{{ unit.date || '-' }}</td>
+            
+            <td class="font-semibold text-sm whitespace-nowrap" style="color: var(--text-secondary);">
+              <span v-if="loadingStates[unit.unit_code]?.hauling && loadingStates[unit.unit_code]?.ob" class="text-gray-400 text-xs">...</span>
+              <span v-else>{{ unitExtraData[unit.unit_code]?.allocation || '-' }}</span>
+            </td>
             
             <!-- PA Column with Mini Bar -->
             <td>
@@ -160,7 +170,7 @@
 
 <script setup>
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
-import { Truck, Calendar, Activity, Clock, AlertTriangle, Box, RefreshCcw, Mountain, Scale, Target, Fuel, Zap } from 'lucide-vue-next';
+import { Truck, Calendar, Activity, Clock, AlertTriangle, Box, RefreshCcw, Mountain, Scale, Target, Fuel, Zap, MapPin } from 'lucide-vue-next';
 import { useKpiStore } from '../stores/kpiStore';
 import { useFilterStore } from '../stores/filterStore';
 import apiClient from '../services/apiClient';
@@ -318,7 +328,7 @@ const fetchExtraData = async () => {
       await Promise.all(batch.map(async (unit) => {
         const code = unit.unit_code;
         if (!unitExtraData.value[code]) {
-          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, ritpiday: 0, fuel: 0, ratio: 0, rawFuelData: null, rawHaulingData: null };
+          unitExtraData.value[code] = { hauling: 0, transit: 0, ob: 0, payload: 0, load_time: 0, ritpiday: 0, fuel: 0, ratio: 0, allocation: '', rawFuelData: null, rawHaulingData: null };
         }
         if (!loadingStates.value[code]) {
           loadingStates.value[code] = { hauling: true, fuel: true, transit: true, ob: true };
@@ -346,12 +356,18 @@ const fetchExtraData = async () => {
             unitExtraData.value[code].payload = haulingRes.value.data?.avg_payload || 0;
             unitExtraData.value[code].load_time = haulingRes.value.data?.avg_loading_time || 0;
             unitExtraData.value[code].ritpiday = haulingRes.value.data?.avg_ritasi_per_day || 0;
+            if (haulingRes.value.data?.allocation) {
+              unitExtraData.value[code].allocation = haulingRes.value.data.allocation;
+            }
           }
           if (transitRes.status === 'fulfilled') {
             unitExtraData.value[code].transit = transitRes.value.data?.total_netto || 0;
           }
           if (obRes.status === 'fulfilled') {
             unitExtraData.value[code].ob = obRes.value.data?.total_bcm || 0;
+            if (!unitExtraData.value[code].allocation && obRes.value.data?.allocation) {
+              unitExtraData.value[code].allocation = obRes.value.data.allocation;
+            }
           }
           if (fuelRes.status === 'fulfilled') {
             unitExtraData.value[code].rawFuelData = fuelRes.value.data;
@@ -389,6 +405,7 @@ const getTopEvent = (unit) => {
 const getSortValue = (unit, key) => {
   switch (key) {
     case 'unit_code': return unit.unit_code || '';
+    case 'allocation': return unitExtraData.value[unit.unit_code]?.allocation || '';
     case 'pa': return unit.pa_percent || 0;
     case 'ua': return unit.ua_percent || 0;
     case 'hauling': return unitExtraData.value[unit.unit_code]?.hauling || 0;
