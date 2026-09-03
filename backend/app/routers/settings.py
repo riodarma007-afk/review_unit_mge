@@ -21,7 +21,7 @@ def get_targets(activity: str = None, pit: str = None, year: int = None, month: 
     records = repo.get_target_settings(**filters)
     return records
 
-@router.post("/targets", response_model=TargetSettingResponse)
+@router.post("/targets", response_model=TargetSettingResponse) 
 def create_target(setting: TargetSettingCreate):
     setting_data = setting.model_dump()
     new_id = repo.create_target_setting(setting_data)

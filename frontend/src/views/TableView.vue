@@ -205,9 +205,8 @@ const MOUSE_IDLE_TIMEOUT = 5000; // resume after 5s idle
 
 const popupTypes = ['delay', 'hauling', 'transit', 'ob', 'fuel'];
 
-const visibleUnitsCount = ref(0);
 const visibleUnits = computed(() => {
-  return sortedUnits.value?.slice(0, visibleUnitsCount.value) || [];
+  return sortedUnits.value || [];
 });
 
 const isAutoHover = (unitCode, type, rowIndex) => {
@@ -219,7 +218,9 @@ const isAutoHover = (unitCode, type, rowIndex) => {
 const startCombinedAnimation = () => {
   stopAnimations();
   isUserInteracting.value = false;
-  visibleUnitsCount.value = 0;
+  
+  // Show all rows immediately (no row-by-row slide-in animation)
+  visibleUnitsCount.value = sortedUnits.value?.length || 0;
   autoHighlightIndex.value = -1;
   autoHighlightColumnIndex.value = -1;
   
@@ -238,21 +239,19 @@ const stepAnimation = () => {
 
   const totalRows = sortedUnits.value?.length || 0;
   
-  // If we haven't added any rows yet, or we finished the current row's popups
-  if (visibleUnitsCount.value === 0 || autoHighlightColumnIndex.value >= popupTypes.length - 1) {
+  // If we finished the current row's popups
+  if (autoHighlightColumnIndex.value >= popupTypes.length - 1) {
     // Move to next row
-    if (visibleUnitsCount.value >= totalRows) {
+    autoHighlightIndex.value++;
+    autoHighlightColumnIndex.value = -1; // hide popups temporarily
+    
+    if (autoHighlightIndex.value >= totalRows) {
       // Reached the end, restart from beginning
       startCombinedAnimation();
       return;
     }
     
-    // Slide in the next row
-    visibleUnitsCount.value++;
-    autoHighlightIndex.value = visibleUnitsCount.value - 1;
-    autoHighlightColumnIndex.value = -1; // hide popups temporarily
-    
-    // Auto scroll downwards to show the newly added row
+    // Auto scroll downwards to show the newly highlighted row
     nextTick(() => {
       const row = rowRefs.value[autoHighlightIndex.value];
       if (row && tableWrapperRef.value) {
@@ -277,9 +276,6 @@ const onMouseActivity = () => {
   autoHighlightIndex.value = -1;
   autoHighlightColumnIndex.value = -1;
   stopAnimations();
-  
-  // Show all rows instantly
-  visibleUnitsCount.value = sortedUnits.value?.length || 0;
   
   // Reset idle timer
   if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
@@ -332,8 +328,9 @@ const fetchExtraData = async () => {
     // Optional: If you want the UI to show '...' for all units immediately, assign it here:
     loadingStates.value = { ...tempLoadingStates };
 
-    // Process units in batches to prevent browser connection limits / server overload
-    const batchSize = 3;
+    // Process units in larger batches (e.g., 20) and update UI progressively.
+    // This allows the browser to queue requests efficiently and shows data faster.
+    const batchSize = 20;
     for (let i = 0; i < units.length; i += batchSize) {
       const batch = units.slice(i, i + batchSize);
       
@@ -385,11 +382,11 @@ const fetchExtraData = async () => {
           tempLoadingStates[code] = { hauling: false, fuel: false, transit: false, ob: false };
         }
       }));
+      
+      // Update UI progressively after every batch of 20 finishes
+      unitExtraData.value = { ...tempExtraData };
+      loadingStates.value = { ...tempLoadingStates };
     }
-    
-    // Assign EVERYTHING at once at the very end so all rows appear simultaneously
-    unitExtraData.value = { ...tempExtraData };
-    loadingStates.value = { ...tempLoadingStates };
   };
 
 watch(() => kpiStore.unitPerformances, () => {
